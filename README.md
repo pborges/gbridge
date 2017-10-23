@@ -75,8 +75,6 @@ import (
 	"github.com/pborges/gbridge"
 	"log"
 	"os"
-	"google.golang.org/grpc"
-	"context"
 )
 
 var addr = ":8085"
@@ -101,7 +99,7 @@ func main() {
 		ClientSecret: "654321", //as long as this matches the settings "Account linking" on actions console it works
 	}
 
-	b.HandleDevice(NewSwitch("1", "alarm"), func(req gbridge.CommandRequest, res *gbridge.CommandResponse) {
+	b.HandleDevice(NewSwitch("1", "alarm"), func(dev gbridge.Device, req gbridge.CommandRequest, res *gbridge.CommandResponse) {
 		log.Printf("Exec Cmd: %+v\n", req)
 		res.Status = gbridge.CommandStatusSuccess
 		res.States.Online = true
@@ -121,11 +119,14 @@ func NewSwitch(id string, name string) gbridge.Device {
 		Id:     id,
 		Type:   gbridge.DeviceTypeSwitch,
 		Traits: []gbridge.DeviceTrait{gbridge.DeviceTraitOnOff},
+		Name: gbridge.DeviceName{
+			DefaultNames: []string{name},
+			Name:         name,
+			Nicknames:    []string{name},
+		},
 	}
-	d.Name.DefaultNames = []string{"Switch"}
-	d.Name.Name = "Switch"
-	d.Name.Nicknames = []string{name}
 	return d
 }
+
 
 ```
