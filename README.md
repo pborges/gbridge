@@ -61,7 +61,7 @@ porting from [actionssdk-smart-home-nodejs](https://github.com/actions-on-google
 
 15. Click the 3 dots and go to **Manage Accounts**
 
-16. Select your project from the Add New section
+16. Select your project from the **Add New** section
 
 
 ### Example
