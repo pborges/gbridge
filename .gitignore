@@ -3,3 +3,4 @@
 action.json
 creds.data
 cmd/
+vendor/
