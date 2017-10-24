@@ -51,9 +51,9 @@ porting from [actionssdk-smart-home-nodejs](https://github.com/actions-on-google
 
 11. Under **Client Information**, enter the client ID and secret from earlier.
 
-12. The Authorization URL is the hosted URL of your app with '/oauth' as the path, e.g. https:/<YOUR URL>/oauth
+12. The Authorization URL is the hosted URL of your app with '/oauth' as the path, e.g. https://&lt;YOUR URL&gt;/oauth
 
-13. The Token URL is the hosted URL of your app with '/token' as the path, e.g. https://<YOUR URL>/token
+13. The Token URL is the hosted URL of your app with '/token' as the path, e.g. https://&lt;YOUR URL&gt;/token
 
 14. Click **TEST DRAFT**
 
@@ -61,7 +61,7 @@ porting from [actionssdk-smart-home-nodejs](https://github.com/actions-on-google
 
 15. Click the 3 dots and go to **Manage Accounts**
 
-16. Select your project from the Add New section
+16. Select your project from the **Add New** section
 
 
 ### Example
