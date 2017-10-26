@@ -16,7 +16,8 @@ type IntentMessageResponse struct {
 }
 
 type SyncResponse struct {
-	Devices []Device `json:"devices"`
+	AgentUserId string   `json:"agentUserId"`
+	Devices     []Device `json:"devices"`
 }
 
 type ExecRequest struct {

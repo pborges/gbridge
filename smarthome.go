@@ -19,7 +19,7 @@ func (b *Bridge) HandleSmartHome(w http.ResponseWriter, r *http.Request) {
 		log.Println("error decoding request:", err)
 	}
 	for _, i := range req.Inputs {
-		//log.Printf("SMARTHOME: %+v\n", i)
+		log.Printf("Intent: %s-> %s\n", i.Intent, string(i.Payload))
 		switch i.Intent {
 		case "action.devices.SYNC":
 			log.Println("SYNC")
@@ -30,7 +30,8 @@ func (b *Bridge) HandleSmartHome(w http.ResponseWriter, r *http.Request) {
 			if err := json.NewEncoder(io.MultiWriter(w, os.Stdout)).Encode(IntentMessageResponse{
 				RequestId: req.RequestId,
 				Payload: SyncResponse{
-					Devices: devices,
+					AgentUserId: b.AgentUserId,
+					Devices:     devices,
 				},
 			}); err != nil {
 				log.Println("result error:", err)
