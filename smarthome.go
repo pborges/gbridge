@@ -21,11 +21,40 @@ func (b *Bridge) HandleSmartHome(w http.ResponseWriter, r *http.Request) {
 	for _, i := range req.Inputs {
 		log.Printf("Intent: %s-> %s\n", i.Intent, string(i.Payload))
 		switch i.Intent {
+		case "action.devices.QUERY":
+			requestBody := QueryRequest{}
+			if err := json.Unmarshal(i.Payload, &requestBody); err != nil {
+				log.Println(err)
+				return
+			}
+			log.Printf("QUERY: %+v\n", requestBody)
+
+			responseBody := QueryResponse{
+				Devices: make(map[string]DeviceState),
+			}
+
+			for _, d := range requestBody.Devices {
+				if ctx, ok := b.Devices[d.ID]; ok {
+					if ctx.Query != nil {
+						res := DeviceState{}
+						ctx.Query(ctx.Device, &res)
+						responseBody.Devices[d.ID] = res
+					}
+				}
+			}
+
+			if err := json.NewEncoder(io.MultiWriter(w, os.Stdout)).Encode(IntentMessageResponse{
+				RequestId: req.RequestId,
+				Payload:   responseBody,
+			}); err != nil {
+				log.Println(err)
+			}
+			return
 		case "action.devices.SYNC":
 			log.Println("SYNC")
 			devices := []Device{}
-			for _, v := range b.Devices {
-				devices = append(devices, v)
+			for _, ctx := range b.Devices {
+				devices = append(devices, ctx.Device)
 			}
 			if err := json.NewEncoder(io.MultiWriter(w, os.Stdout)).Encode(IntentMessageResponse{
 				RequestId: req.RequestId,
@@ -53,17 +82,19 @@ func (b *Bridge) HandleSmartHome(w http.ResponseWriter, r *http.Request) {
 			responseBody := ExecResponse{}
 			for _, c := range requestBody.Commands {
 				for _, d := range c.Devices {
-					if fn, ok := b.fns[d.ID]; ok {
-						for _, e := range c.Execution {
-							r := CommandResponse{
-								Ids:    ids,
-								Status: CommandStatusError,
+					if ctx, ok := b.Devices[d.ID]; ok {
+						if ctx.Exec != nil {
+							for _, e := range c.Execution {
+								r := CommandResponse{
+									Ids:    ids,
+									Status: CommandStatusError,
+								}
+								ctx.Exec(b.Devices[d.ID].Device, e, &r)
+								if r.Status == CommandStatusError && r.ErrorCode == "" {
+									r.ErrorCode = DeviceErrorUnknownError
+								}
+								responseBody.Commands = append(responseBody.Commands, r)
 							}
-							fn(b.Devices[d.ID], e, &r)
-							if r.Status == CommandStatusError && r.ErrorCode == "" {
-								r.ErrorCode = DeviceErrorUnknownError
-							}
-							responseBody.Commands = append(responseBody.Commands, r)
 						}
 					} else {
 						responseBody.Commands = append(responseBody.Commands, CommandResponse{

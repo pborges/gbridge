@@ -36,7 +36,8 @@ type ExecResponse struct {
 type CommandRequest struct {
 	Command string `json:"command"`
 	Params struct {
-		On bool `json:"on"`
+		On         bool `json:"on"`
+		Brightness int  `json:"brightness"`
 	} `json:"params"`
 }
 
@@ -47,12 +48,25 @@ const (
 	CommandStatusError   CommandStatus = "ERROR"
 )
 
+type DeviceState struct {
+	On         bool `json:"on"`
+	Online     bool `json:"online"`
+	Brightness int  `json:"brightness"`
+}
+
 type CommandResponse struct {
-	Ids    []string      `json:"ids"`
-	Status CommandStatus `json:"status"`
-	States struct {
-		On     bool `json:"on"`
-		Online bool `json:"online"`
-	} `json:"states"`
-	ErrorCode DeviceError `json:"errorCode"`
+	Ids       []string      `json:"ids"`
+	Status    CommandStatus `json:"status"`
+	States    DeviceState   `json:"states"`
+	ErrorCode DeviceError   `json:"errorCode"`
+}
+
+type QueryRequest struct {
+	Devices []struct {
+		ID string `json:"id"`
+	} `json:"devices"`
+}
+
+type QueryResponse struct {
+	Devices map[string]DeviceState `json:"devices"`
 }

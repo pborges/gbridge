@@ -31,7 +31,7 @@ func main() {
 		ClientSecret: "654321", //as long as this matches the settings "Account linking" on actions console it works
 	}
 
-	b.HandleDevice(NewSwitch("1", "alarm"), func(dev gbridge.Device, req gbridge.CommandRequest, res *gbridge.CommandResponse) {
+	b.HandleExec(NewSwitch("1", "alarm"), func(dev gbridge.Device, req gbridge.CommandRequest, res *gbridge.CommandResponse) {
 		log.Printf("Exec Cmd: %+v\n", req)
 		res.Status = gbridge.CommandStatusSuccess
 		res.States.Online = true

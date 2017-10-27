@@ -60,17 +60,28 @@ type Device struct {
 	Attributes struct {
 	} `json:"attributes,omitempty"`
 	RoomHint   string                 `json:"roomHint,omitempty"`
-	DeviceInfo *DeviceInfo             `json:"deviceInfo,omitempty"`
+	DeviceInfo *DeviceInfo            `json:"deviceInfo,omitempty"`
 	CustomData map[string]interface{} `json:"customData,omitempty"`
 }
 
-func (b *Bridge) HandleDevice(d Device, fn DeviceHandlerFunc) {
+func (b *Bridge) HandleExec(d Device, execFn ExecHandlerFunc) {
 	if b.Devices == nil {
-		b.Devices = make(map[string]Device)
+		b.Devices = make(map[string]*DeviceContext)
 	}
-	b.Devices[d.Id] = d
-	if b.fns == nil {
-		b.fns = make(map[string]DeviceHandlerFunc)
+	if _, ok := b.Devices[d.Id]; !ok {
+		b.Devices[d.Id] = new(DeviceContext)
 	}
-	b.fns[d.Id] = fn
+	b.Devices[d.Id].Device = d
+	b.Devices[d.Id].Exec = execFn
+}
+
+func (b *Bridge) HandleQuery(d Device, queryFn QueryHandlerFunc) {
+	if b.Devices == nil {
+		b.Devices = make(map[string]*DeviceContext)
+	}
+	if _, ok := b.Devices[d.Id]; !ok {
+		b.Devices[d.Id] = new(DeviceContext)
+	}
+	b.Devices[d.Id].Device = d
+	b.Devices[d.Id].Query = queryFn
 }
