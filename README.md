@@ -130,3 +130,4 @@ func NewSwitch(id string, name string) gbridge.Device {
 
 
 ```
+*NOTE place this service behind caddy or some other reverse proxy that does LetsEncrypt SSL, or do your own SSL encryption
