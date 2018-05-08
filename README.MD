@@ -130,3 +130,5 @@ func NewSwitch(id string, name string) gbridge.Device {
 
 
 ```
+# Notes
+If you push an update to actions.json, you might have to unlink your account in google home and re-link it for testing to work from your phone
