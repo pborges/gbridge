@@ -99,7 +99,7 @@ func main() {
 		ClientSecret: "654321", //as long as this matches the settings "Account linking" on actions console it works
 	}
 
-	b.HandleDevice(NewSwitch("1", "alarm"), func(dev gbridge.Device, req gbridge.CommandRequest, res *gbridge.CommandResponse) {
+	b.HandleExec(NewSwitch("1", "alarm"), func(dev gbridge.Device, req gbridge.CommandRequest, res *gbridge.CommandResponse) {
 		log.Printf("Exec Cmd: %+v\n", req)
 		res.Status = gbridge.CommandStatusSuccess
 		res.States.Online = true
@@ -131,4 +131,8 @@ func NewSwitch(id string, name string) gbridge.Device {
 
 ```
 # Notes
-If you push an update to actions.json, you might have to unlink your account in google home and re-link it for testing to work from your phone
+* If you push an update to actions.json, you might have to unlink your account in google home and re-link it for testing to work from your phone
+
+* See the /example folder for all the available examples. 
+
+* Place this service behind caddy or some other reverse proxy that does LetsEncrypt SSL, or do your own SSL encryption
