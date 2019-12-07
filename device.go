@@ -5,19 +5,19 @@ type Device interface {
 	DeviceTraits() []Trait
 }
 
-type BaseDevice struct {
+type BasicDevice struct {
 	Name   string
 	Traits []Trait
 	Info   DeviceInfo
 }
 
-func (d BaseDevice) DeviceInfo() DeviceInfo {
+func (d BasicDevice) DeviceInfo() DeviceInfo {
 	return d.Info
 }
 
-func (d BaseDevice) DeviceName() string {
+func (d BasicDevice) DeviceName() string {
 	return d.Name
 }
-func (d BaseDevice) DeviceTraits() []Trait {
+func (d BasicDevice) DeviceTraits() []Trait {
 	return d.Traits
 }

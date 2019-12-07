@@ -3,36 +3,72 @@ package oauth
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"strings"
 )
 
-type Server struct {
-	AuthProvider AuthenticationProvider
+const AgentUserIdHeader = "agentUserId"
+
+func SetAgentUserIdHeader(r *http.Request, agentUserId string) {
+	r.Header.Set(AgentUserIdHeader, agentUserId)
 }
 
-func (s Server) HandleAuth() func(w http.ResponseWriter, r *http.Request) {
+func GetAgentUserIdFromHeader(r *http.Request) AgentUserId {
+	return AgentUserId(r.Header.Get(AgentUserIdHeader))
+}
+
+type Server struct {
+	AuthenticationProvider AuthenticationProvider
+	AgentUserLoginHandler  http.HandlerFunc
+}
+
+func (s Server) Authenticate(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
-
-		clientId := r.URL.Query().Get("client_id")
-		redirectUrl := r.URL.Query().Get("redirect_uri")
-		state := r.URL.Query().Get("state")
-		responseType := r.URL.Query().Get("response_type")
-
-		if responseType != "code" {
-			http.Error(w, "response_type must be code, got "+responseType, http.StatusInternalServerError)
-			return
-		}
-
-		if authCode, err := s.AuthProvider.GenerateAuthCodeForClient(clientId); err == nil {
-			http.Redirect(w, r, fmt.Sprintf("%s?code=%s&state=%s", redirectUrl, authCode, state), http.StatusFound)
+		accessToken := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+		if agentUserId, _, err := s.AuthenticationProvider.GetAgentUserIdForToken(accessToken); err == nil {
+			SetAgentUserIdHeader(r, string(agentUserId))
+			next(w, r)
 		} else {
-			http.Error(w, "unable to generate an authentication code, "+err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusForbidden)
 		}
 	}
 }
 
-func (s Server) HandleToken() func(w http.ResponseWriter, r *http.Request) {
+func (s Server) HandleAuth() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+
+		// let the caller display the login page, and handle the post back before we take over
+		s.AgentUserLoginHandler(w, r)
+
+		if r.Method == http.MethodPost {
+			// see if we have a agent set up in the headers
+			if agentUserId := GetAgentUserIdFromHeader(r); agentUserId != "" {
+				log.Println("valid user agent")
+				clientId := r.URL.Query().Get("client_id")
+				redirectUrl := r.URL.Query().Get("redirect_uri")
+				state := r.URL.Query().Get("state")
+				responseType := r.URL.Query().Get("response_type")
+
+				if responseType != "code" {
+					http.Error(w, "response_type must be code, got "+responseType, http.StatusInternalServerError)
+					return
+				}
+
+				if authCode, err := s.AuthenticationProvider.GenerateAuthCode(clientId, agentUserId); err == nil {
+					url := fmt.Sprintf("%s?code=%s&state=%s", redirectUrl, authCode, state)
+					log.Println("generate authCode for", agentUserId, authCode, "do redirect", url)
+					http.Redirect(w, r, url, http.StatusFound)
+				} else {
+					http.Error(w, "unable to generate an authentication code, "+err.Error(), http.StatusBadRequest)
+				}
+			}
+		}
+	}
+}
+
+func (s Server) HandleToken() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
@@ -45,14 +81,14 @@ func (s Server) HandleToken() func(w http.ResponseWriter, r *http.Request) {
 			clientId := r.Form.Get("client_id")
 			clientSecret := r.Form.Get("client_secret")
 			grantType := r.Form.Get("grant_type")
-			code := r.Form.Get("code")
+			authCode := r.Form.Get("code")
 
 			if grantType != "authorization_code" {
 				http.Error(w, "grant_type must be authorization_code, got "+grantType, http.StatusInternalServerError)
 				return
 			}
 
-			if token, err := s.AuthProvider.ValidateAuthCodeAndGenerateToken(clientId, clientSecret, code); err == nil {
+			if token, err := s.AuthenticationProvider.GenerateToken(clientId, clientSecret, authCode); err == nil {
 				t := struct {
 					TokenType string `json:"token_type"`
 					Token
@@ -61,12 +97,15 @@ func (s Server) HandleToken() func(w http.ResponseWriter, r *http.Request) {
 					Token:     token,
 				}
 
+				log.Println("return token", t)
+
 				err := json.NewEncoder(w).Encode(t)
 				if err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 				}
 			} else {
-				http.Error(w, "unable to validate client, "+err.Error(), http.StatusBadRequest)
+				log.Println("unable to generate token", err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 			}
 		}
 	}

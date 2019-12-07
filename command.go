@@ -21,5 +21,5 @@ func (t OnOffCommand) Execute(ctx Context, args map[string]interface{}) error {
 }
 
 func (t OnOffCommand) Name() string {
-	return "action.devices.commands.OnOff"
+	return "action.agents.commands.OnOff"
 }
