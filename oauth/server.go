@@ -3,7 +3,6 @@ package oauth
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 )
@@ -27,7 +26,7 @@ func (s Server) Authenticate(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		accessToken := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
 		if agentUserId, _, err := s.AuthenticationProvider.GetAgentUserIdForToken(accessToken); err == nil {
-			SetAgentUserIdHeader(r, string(agentUserId))
+			SetAgentUserIdHeader(r, agentUserId)
 			next(w, r)
 		} else {
 			http.Error(w, err.Error(), http.StatusForbidden)
@@ -45,7 +44,6 @@ func (s Server) HandleAuth() http.HandlerFunc {
 		if r.Method == http.MethodPost {
 			// see if we have a agent set up in the headers
 			if agentUserId := GetAgentUserIdFromHeader(r); agentUserId != "" {
-				log.Println("valid user agent")
 				clientId := r.URL.Query().Get("client_id")
 				redirectUrl := r.URL.Query().Get("redirect_uri")
 				state := r.URL.Query().Get("state")
@@ -58,7 +56,6 @@ func (s Server) HandleAuth() http.HandlerFunc {
 
 				if authCode, err := s.AuthenticationProvider.GenerateAuthCode(clientId, agentUserId); err == nil {
 					url := fmt.Sprintf("%s?code=%s&state=%s", redirectUrl, authCode, state)
-					log.Println("generate authCode for", agentUserId, authCode, "do redirect", url)
 					http.Redirect(w, r, url, http.StatusFound)
 				} else {
 					http.Error(w, "unable to generate an authentication code, "+err.Error(), http.StatusBadRequest)
@@ -97,14 +94,11 @@ func (s Server) HandleToken() http.HandlerFunc {
 					Token:     token,
 				}
 
-				log.Println("return token", t)
-
 				err := json.NewEncoder(w).Encode(t)
 				if err != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 				}
 			} else {
-				log.Println("unable to generate token", err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 			}
 		}
