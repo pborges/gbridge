@@ -41,6 +41,13 @@ func (s *SmartHome) Handle() http.HandlerFunc {
 				switch i.Intent {
 				case "action.devices.SYNC":
 					res.Payload = s.handleSyncIntent(agent)
+				case "action.devices.EXECUTE":
+					requestBody := proto.ExecRequest{}
+					if err := json.Unmarshal(i.Payload, &requestBody); err == nil {
+						res.Payload = s.handleExecuteIntent(agent, requestBody)
+					} else {
+						http.Error(w, err.Error(), http.StatusInternalServerError)
+					}
 				}
 			}
 
@@ -54,7 +61,55 @@ func (s *SmartHome) Handle() http.HandlerFunc {
 	}
 }
 
+func (s *SmartHome) handleExecuteIntent(agent agentContext, req proto.ExecRequest) proto.ExecResponse {
+	log.Printf("[%s] EXEC: %+v\n", agent.AgentUserId, req)
+
+	var ids []string
+	for _, c := range req.Commands {
+		for _, d := range c.Devices {
+			ids = append(ids, d.ID)
+		}
+	}
+	responseBody := proto.ExecResponse{}
+	// for each command
+	for _, c := range req.Commands {
+		// for each device
+		for _, d := range c.Devices {
+			if ctx, ok := agent.Devices[d.ID]; ok {
+				// execute all the things
+				for _, e := range c.Execution {
+					r := proto.CommandResponse{
+						Ids:    ids,
+						Status: proto.CommandStatusSuccess,
+					}
+					// check all traits...
+					for _, trait := range ctx.DeviceTraits() {
+						// for all the commands...
+						for _, cmd := range trait.TraitCommands() {
+							// for the right command
+							if e.Command == cmd.Name() {
+								// and execute
+								r.Status, r.ErrorCode = cmd.Execute(Context{Target: ctx}, e.Params)
+							}
+						}
+					}
+					responseBody.Commands = append(responseBody.Commands, r)
+				}
+			} else {
+				responseBody.Commands = append(responseBody.Commands, proto.CommandResponse{
+					Ids:       ids,
+					Status:    proto.CommandStatusError,
+					ErrorCode: proto.ErrorCodeDeviceNotFound,
+				})
+			}
+		}
+	}
+	return responseBody
+}
+
 func (s *SmartHome) handleSyncIntent(agent agentContext) proto.SyncResponse {
+	log.Printf("[%s] SYNC\n", agent.AgentUserId)
+
 	devices := make([]proto.Device, 0, len(agent.Devices))
 	for _, d := range agent.Devices {
 

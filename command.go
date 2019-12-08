@@ -1,23 +1,25 @@
 package gbridge
 
-import "errors"
+import (
+	"github.com/pborges/gbridge/proto"
+)
 
 type Command interface {
 	Name() string
 	// passing maps in functions feels dirty
-	Execute(ctx Context, args map[string]interface{}) error
+	Execute(ctx Context, args map[string]interface{}) (proto.CommandStatus, proto.ErrorCode)
 }
 
-type OnOffCommand func(ctx Context, state bool) error
+type OnOffCommand func(ctx Context, state bool) (proto.CommandStatus, proto.ErrorCode)
 
-func (t OnOffCommand) Execute(ctx Context, args map[string]interface{}) error {
+func (t OnOffCommand) Execute(ctx Context, args map[string]interface{}) (proto.CommandStatus, proto.ErrorCode) {
 	if val, ok := args["on"]; ok {
 		if state, ok := val.(bool); ok {
 			return t(ctx, state)
 		}
-		return errors.New("argument 'on' should be a bool")
+		return proto.CommandStatusError, proto.ErrorCodeNotSupported
 	}
-	return errors.New("missing argument 'on'")
+	return proto.CommandStatusError, proto.ErrorCodeProtocolError
 }
 
 func (t OnOffCommand) Name() string {
