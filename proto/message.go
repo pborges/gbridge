@@ -1,6 +1,8 @@
-package gbridge
+package proto
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 type IntentMessageRequest struct {
 	Inputs []struct {
@@ -13,4 +15,9 @@ type IntentMessageRequest struct {
 type IntentMessageResponse struct {
 	RequestId string      `json:"requestId"`
 	Payload   interface{} `json:"payload"`
+}
+
+type SyncResponse struct {
+	AgentUserId string   `json:"agentUserId"`
+	Devices     []Device `json:"devices"`
 }

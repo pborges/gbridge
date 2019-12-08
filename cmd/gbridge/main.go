@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/pborges/gbridge"
 	"github.com/pborges/gbridge/oauth"
+	"github.com/pborges/gbridge/proto"
 	"log"
 	"net/http"
 )
@@ -91,6 +92,9 @@ var loginPage = `
 				</div>
 			</div>
 			<div class="row">
+				&nbsp;
+			</div>
+			<div class="row">
 				<input type="submit" value="Submit">
 			</div>
 		</form>
@@ -125,9 +129,10 @@ func main() {
 				fmt.Fprint(w, loginPage)
 			} else if r.Method == http.MethodPost {
 				agentUserId := r.FormValue("agentUserId")
+				password := r.FormValue("password")
 
-				//todo: validate agentUserId
-				if agentUserId != "" {
+				//todo: validate agentUserId and password...
+				if agentUserId != "" && password != "" {
 					log.Println("register agent", agentUserId)
 					authProvider.RegisterAgent(agentUserId)
 
@@ -142,9 +147,35 @@ func main() {
 
 	smartHome := gbridge.SmartHome{}
 
+	if err := smartHome.RegisterDevice("pborges", gbridge.BasicDevice{
+		Id: "1234567890",
+		Name: proto.DeviceName{
+			Name: "Light1",
+		},
+		Type: proto.DeviceTypeLight,
+		Traits: []gbridge.Trait{
+			gbridge.OnOffTrait{
+				CommandOnlyOnOff: false,
+				OnExecuteChange: func(ctx gbridge.Context, state bool) error {
+					log.Println("turn", ctx.Target.DeviceName(), "device", state)
+					return nil
+				},
+				OnStateHandler: func(ctx gbridge.Context) (bool, error) {
+					log.Println("query state of", ctx.Target.DeviceName())
+					return false, nil
+				},
+			}},
+		Info: proto.DeviceInfo{},
+	}); err != nil {
+		log.Fatal(err)
+	}
+
 	mux.HandleFunc("/oauth", oauthServer.HandleAuth())
 	mux.HandleFunc("/token", oauthServer.HandleToken())
 	mux.HandleFunc("/smarthome", oauthServer.Authenticate(smartHome.Handle()))
+	mux.HandleFunc("/loginPageTest", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, loginPage)
+	})
 
 	log.Fatal(http.ListenAndServe(":8085", logger(mux)))
 }

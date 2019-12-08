@@ -14,8 +14,8 @@ func SetAgentUserIdHeader(r *http.Request, agentUserId string) {
 	r.Header.Set(AgentUserIdHeader, agentUserId)
 }
 
-func GetAgentUserIdFromHeader(r *http.Request) AgentUserId {
-	return AgentUserId(r.Header.Get(AgentUserIdHeader))
+func GetAgentUserIdFromHeader(r *http.Request) string {
+	return r.Header.Get(AgentUserIdHeader)
 }
 
 type Server struct {

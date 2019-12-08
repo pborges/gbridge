@@ -5,35 +5,33 @@ import (
 	"sync"
 )
 
-type AgentUserId string
-
 type Token struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 }
 
 type AuthenticationProvider interface {
-	GenerateAuthCode(clientId string, agentUserId AgentUserId) (string, error)
+	GenerateAuthCode(clientId string, agentUserId string) (string, error)
 	GenerateToken(clientId string, clientSecret string, authCode string) (Token, error)
-	GetAgentUserIdForToken(token string) (agentUserId AgentUserId, refresh bool, err error)
+	GetAgentUserIdForToken(token string) (agentUserId string, refresh bool, err error)
 }
 
 // a very simple authentication provider
 
 type SimpleAuthenticationProvider struct {
-	clients map[string]simpleAuthProviderClient
-	agents  map[AgentUserId]simpleAuthProviderAgent
+	clients map[string]simpleAuthProviderClient // key: clientId
+	agents  map[string]simpleAuthProviderAgent  // key: agentUserId
 	lock    sync.Mutex
 }
 
 type simpleAuthProviderClient struct {
 	ID        string
 	Secret    string
-	AuthCodes map[string]AgentUserId
+	AuthCodes map[string]string
 }
 
 type simpleAuthProviderAgent struct {
-	ID    AgentUserId
+	ID    string
 	Token Token
 }
 
@@ -47,7 +45,7 @@ func (m *SimpleAuthenticationProvider) RegisterClient(clientId string, clientSec
 	m.clients[clientId] = simpleAuthProviderClient{
 		ID:        clientId,
 		Secret:    clientSecret,
-		AuthCodes: make(map[string]AgentUserId),
+		AuthCodes: make(map[string]string),
 	}
 }
 
@@ -56,10 +54,10 @@ func (m *SimpleAuthenticationProvider) RegisterAgent(agentUserId string) {
 	defer m.lock.Unlock()
 
 	if m.agents == nil {
-		m.agents = make(map[AgentUserId]simpleAuthProviderAgent)
+		m.agents = make(map[string]simpleAuthProviderAgent)
 	}
 	agent := simpleAuthProviderAgent{
-		ID: AgentUserId(agentUserId),
+		ID: agentUserId,
 		Token: Token{
 			AccessToken:  GenerateRandomString(36),
 			RefreshToken: GenerateRandomString(36),
@@ -68,7 +66,7 @@ func (m *SimpleAuthenticationProvider) RegisterAgent(agentUserId string) {
 	m.agents[agent.ID] = agent
 }
 
-func (m *SimpleAuthenticationProvider) GenerateAuthCode(clientId string, agentUserId AgentUserId) (string, error) {
+func (m *SimpleAuthenticationProvider) GenerateAuthCode(clientId string, agentUserId string) (string, error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
@@ -109,7 +107,7 @@ func (m *SimpleAuthenticationProvider) GenerateToken(clientId string, clientSecr
 	return Token{}, errors.New("unknown client")
 }
 
-func (m *SimpleAuthenticationProvider) GetAgentUserIdForToken(token string) (agentUserId AgentUserId, refresh bool, err error) {
+func (m *SimpleAuthenticationProvider) GetAgentUserIdForToken(token string) (agentUserId string, refresh bool, err error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
