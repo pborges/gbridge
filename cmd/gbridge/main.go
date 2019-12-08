@@ -165,7 +165,9 @@ func main() {
 					return false, nil
 				},
 			}},
-		Info: proto.DeviceInfo{},
+		Info: proto.DeviceInfo{
+			HwVersion: "1.0",
+		},
 	}); err != nil {
 		log.Fatal(err)
 	}
@@ -173,9 +175,6 @@ func main() {
 	mux.HandleFunc("/oauth", oauthServer.HandleAuth())
 	mux.HandleFunc("/token", oauthServer.HandleToken())
 	mux.HandleFunc("/smarthome", oauthServer.Authenticate(smartHome.Handle()))
-	mux.HandleFunc("/loginPageTest", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, loginPage)
-	})
 
 	log.Fatal(http.ListenAndServe(":8085", logger(mux)))
 }

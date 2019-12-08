@@ -13,12 +13,21 @@ type DeviceInfoProvider interface {
 	DeviceInfo() proto.DeviceInfo
 }
 
+type DeviceRoomHintProvider interface {
+	DeviceRoomHint() string
+}
+
 type BasicDevice struct {
-	Id     string
-	Name   proto.DeviceName
-	Type   proto.DeviceType
-	Traits []Trait
-	Info   proto.DeviceInfo
+	Id       string
+	Name     proto.DeviceName
+	Type     proto.DeviceType
+	Traits   []Trait
+	Info     proto.DeviceInfo
+	RoomHint string
+}
+
+func (d BasicDevice) DeviceRoomHint() string {
+	return d.RoomHint
 }
 
 func (d BasicDevice) DeviceType() proto.DeviceType {

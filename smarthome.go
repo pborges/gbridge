@@ -124,18 +124,23 @@ func (s *SmartHome) handleSyncIntent(agent agentContext) proto.SyncResponse {
 			info = p.DeviceInfo()
 		}
 
+		var roomHint string
+		if p, ok := d.(DeviceRoomHintProvider); ok {
+			roomHint = p.DeviceRoomHint()
+		}
+
 		dev := proto.Device{
 			Id:         d.DeviceId(),
 			Type:       d.DeviceType(),
 			Traits:     traits,
 			Name:       d.DeviceName(),
 			DeviceInfo: info,
+			RoomHint:   roomHint,
 
 			//todo make interfaces for these types
 			CustomData:      make(map[string]interface{}),
 			WillReportState: false,
 			Attributes:      struct{}{},
-			RoomHint:        "",
 		}
 		devices = append(devices, dev)
 	}
