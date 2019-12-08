@@ -117,10 +117,10 @@ func logger(next http.Handler) http.Handler {
 
 func main() {
 	mux := http.NewServeMux()
-
 	authProvider := oauth.SimpleAuthenticationProvider{}
-	authProvider.RegisterClient("123456", "654321")
+	smartHome := gbridge.SmartHome{}
 
+	// configure the oauth server
 	oauthServer := oauth.Server{
 		AuthenticationProvider: &authProvider,
 		AgentUserLoginHandler: func(w http.ResponseWriter, r *http.Request) {
@@ -145,8 +145,10 @@ func main() {
 		},
 	}
 
-	smartHome := gbridge.SmartHome{}
+	// register clients
+	authProvider.RegisterClient("123456", "654321")
 
+	// register devices
 	if err := smartHome.RegisterDevice("pborges", gbridge.BasicDevice{
 		Id: "1234567890",
 		Name: proto.DeviceName{
@@ -172,9 +174,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// set up the http endpoints
 	mux.HandleFunc("/oauth", oauthServer.HandleAuth())
 	mux.HandleFunc("/token", oauthServer.HandleToken())
 	mux.HandleFunc("/smarthome", oauthServer.Authenticate(smartHome.Handle()))
 
+	// serve!
 	log.Fatal(http.ListenAndServe(":8085", logger(mux)))
 }
