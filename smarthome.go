@@ -48,6 +48,8 @@ func (s *SmartHome) Handle() http.HandlerFunc {
 					} else {
 						http.Error(w, err.Error(), http.StatusInternalServerError)
 					}
+				case "action.devices.QUERY":
+					//todo handle query
 				}
 			}
 
