@@ -79,8 +79,9 @@ func (s *SmartHome) handleExecuteIntent(agent agentContext, req proto.ExecReques
 				// execute all the things
 				for _, e := range c.Execution {
 					r := proto.CommandResponse{
-						Ids:    ids,
-						Status: proto.CommandStatusSuccess,
+						Ids:       ids,
+						Status:    proto.CommandStatusError,
+						ErrorCode: proto.ErrorCodeNotSupported,
 					}
 					// check all traits...
 					for _, trait := range ctx.DeviceTraits() {
