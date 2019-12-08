@@ -40,6 +40,11 @@ type CommandRequest struct {
 	Params  map[string]interface{} `json:"params"`
 }
 
+type ErrorResponse struct {
+	Status    CommandStatus `json:"status"`
+	ErrorCode ErrorCode     `json:"errorCode,omitempty"`
+}
+
 type CommandStatus string
 
 const (
@@ -49,8 +54,8 @@ const (
 
 type CommandResponse struct {
 	Ids       []string        `json:"ids"`
-	Status    CommandStatus   `json:"status"`
 	States    json.RawMessage `json:"states"`
+	Status    CommandStatus   `json:"status"`
 	ErrorCode ErrorCode       `json:"errorCode,omitempty"`
 }
 

@@ -46,7 +46,10 @@ func (s *SmartHome) Handle() http.HandlerFunc {
 					if err := json.Unmarshal(i.Payload, &requestBody); err == nil {
 						res.Payload = s.handleExecuteIntent(agent, requestBody)
 					} else {
-						http.Error(w, err.Error(), http.StatusInternalServerError)
+						res.Payload = proto.ErrorResponse{
+							Status:    proto.CommandStatusError,
+							ErrorCode: proto.ErrorCodeProtocolError,
+						}
 					}
 				case "action.devices.QUERY":
 					//todo handle query
@@ -55,8 +58,8 @@ func (s *SmartHome) Handle() http.HandlerFunc {
 
 			if err := json.NewEncoder(io.MultiWriter(w, log.Writer())).Encode(res); err != nil {
 				log.Println("error encoding sync response:", err)
+				http.Error(w, "error encoding sync response: "+err.Error(), http.StatusInternalServerError)
 			}
-
 		} else {
 			http.Error(w, "unable to find agentUserId", http.StatusInternalServerError)
 		}
