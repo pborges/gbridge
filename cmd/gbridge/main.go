@@ -60,7 +60,7 @@ var loginPage = `
 				content: "";
 				display: table;
 				clear: both;
-			}"
+			}
 			@media screen and (max-width: 600px) {
 				.col-25, .col-75, input[type=submit] {
 					width: 100%;
