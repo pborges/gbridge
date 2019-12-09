@@ -106,11 +106,6 @@ var loginPage = `
 func logger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Println("HTTP", r.Method, r.URL)
-		//for name, headers := range r.Header {
-		//	for _, h := range headers {
-		//		log.Println("\tHEADER:", name, "->", h)
-		//	}
-		//}
 		next.ServeHTTP(w, r)
 	})
 }
@@ -158,11 +153,11 @@ func main() {
 		Traits: []gbridge.Trait{
 			gbridge.OnOffTrait{
 				CommandOnlyOnOff: false,
-				OnExecuteChange: func(ctx gbridge.Context, state bool) proto.ErrorCode {
+				OnExecuteChange: func(ctx gbridge.Context, state bool) proto.DeviceError {
 					log.Println("turn", ctx.Target.DeviceName(), "device", state)
 					return nil
 				},
-				OnStateHandler: func(ctx gbridge.Context) (bool, error) {
+				OnStateHandler: func(ctx gbridge.Context) (bool, proto.ErrorCode) {
 					log.Println("query state of", ctx.Target.DeviceName())
 					return false, nil
 				},

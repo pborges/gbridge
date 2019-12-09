@@ -1,6 +1,9 @@
 package gbridge
 
-import "errors"
+import (
+	"errors"
+	"github.com/pborges/gbridge/proto"
+)
 
 type Trait interface {
 	TraitName() string
@@ -13,7 +16,7 @@ type Trait interface {
 type OnOffTrait struct {
 	CommandOnlyOnOff bool
 	OnExecuteChange  OnOffCommand
-	OnStateHandler   func(Context) (bool, error)
+	OnStateHandler   func(Context) (bool, proto.ErrorCode)
 }
 
 func (t OnOffTrait) ValidateTrait() error {

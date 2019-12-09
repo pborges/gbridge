@@ -7,12 +7,12 @@ import (
 type Command interface {
 	Name() string
 	// passing maps in functions feels dirty
-	Execute(ctx Context, args map[string]interface{}) proto.ErrorCode
+	Execute(ctx Context, args map[string]interface{}) proto.DeviceError
 }
 
-type OnOffCommand func(ctx Context, state bool) proto.ErrorCode
+type OnOffCommand func(ctx Context, state bool) proto.DeviceError
 
-func (t OnOffCommand) Execute(ctx Context, args map[string]interface{}) proto.ErrorCode {
+func (t OnOffCommand) Execute(ctx Context, args map[string]interface{}) proto.DeviceError {
 	if val, ok := args["on"]; ok {
 		if state, ok := val.(bool); ok {
 			return t(ctx, state)

@@ -1,7 +1,9 @@
 package gbridge
 
+import "github.com/pborges/gbridge/proto"
+
 type State struct {
 	Name  string
 	Value interface{}
-	Error error
+	Error proto.ErrorCode
 }
