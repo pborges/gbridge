@@ -2,6 +2,7 @@ package proto
 
 import (
 	"encoding/json"
+	"errors"
 )
 
 type IntentMessageRequest struct {
@@ -59,22 +60,17 @@ type CommandResponse struct {
 	ErrorCode ErrorCode       `json:"errorCode,omitempty"`
 }
 
-type ErrorCode string
+type ErrorCode error
 
-func (e ErrorCode) Error() string {
-	return string(e)
-}
-
-const (
-	ErrorCodeNone            ErrorCode = ""
-	ErrorCodeAuthExpired     ErrorCode = "authExpired"
-	ErrorCodeAuthFailure     ErrorCode = "authFailure"
-	ErrorCodeDeviceOffline   ErrorCode = "deviceOffline"
-	ErrorCodeTimeout         ErrorCode = "timeout"
-	ErrorCodeDeviceTurnedOff ErrorCode = "deviceTurnedOff"
-	ErrorCodeDeviceNotFound  ErrorCode = "deviceNotFound"
-	ErrorCodeValueOutofRange ErrorCode = "valueOutOfRange"
-	ErrorCodeNotSupported    ErrorCode = "notSupported"
-	ErrorCodeProtocolError   ErrorCode = "protocolError"
-	ErrorCodeUnknown         ErrorCode = "unknownError"
+var (
+	ErrorCodeAuthExpired     ErrorCode = errors.New("authExpired")
+	ErrorCodeAuthFailure     ErrorCode = errors.New("authFailure")
+	ErrorCodeDeviceOffline   ErrorCode = errors.New("deviceOffline")
+	ErrorCodeTimeout         ErrorCode = errors.New("timeout")
+	ErrorCodeDeviceTurnedOff ErrorCode = errors.New("deviceTurnedOff")
+	ErrorCodeDeviceNotFound  ErrorCode = errors.New("deviceNotFound")
+	ErrorCodeValueOutofRange ErrorCode = errors.New("valueOutOfRange")
+	ErrorCodeNotSupported    ErrorCode = errors.New("notSupported")
+	ErrorCodeProtocolError   ErrorCode = errors.New("protocolError")
+	ErrorCodeUnknown         ErrorCode = errors.New("unknownError")
 )

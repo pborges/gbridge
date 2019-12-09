@@ -85,7 +85,6 @@ func (s *SmartHome) handleExecuteIntent(agent agentContext, req proto.ExecReques
 				for _, e := range c.Execution {
 					r := proto.CommandResponse{
 						Ids:       ids,
-						Status:    proto.CommandStatusError,
 						ErrorCode: proto.ErrorCodeNotSupported,
 					}
 					// check all traits...
@@ -95,9 +94,15 @@ func (s *SmartHome) handleExecuteIntent(agent agentContext, req proto.ExecReques
 							// for the right command
 							if e.Command == cmd.Name() {
 								// and execute
-								r.Status, r.ErrorCode = cmd.Execute(Context{Target: ctx}, e.Params)
+								r.ErrorCode = cmd.Execute(Context{Target: ctx}, e.Params)
 							}
 						}
+					}
+
+					if r.ErrorCode == nil {
+						r.Status = proto.CommandStatusSuccess
+					} else {
+						r.Status = proto.CommandStatusError
 					}
 					responseBody.Commands = append(responseBody.Commands, r)
 				}

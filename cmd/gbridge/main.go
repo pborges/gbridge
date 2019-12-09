@@ -158,9 +158,9 @@ func main() {
 		Traits: []gbridge.Trait{
 			gbridge.OnOffTrait{
 				CommandOnlyOnOff: false,
-				OnExecuteChange: func(ctx gbridge.Context, state bool) (proto.CommandStatus, proto.ErrorCode) {
+				OnExecuteChange: func(ctx gbridge.Context, state bool) proto.ErrorCode {
 					log.Println("turn", ctx.Target.DeviceName(), "device", state)
-					return proto.CommandStatusSuccess, proto.ErrorCodeNone
+					return nil
 				},
 				OnStateHandler: func(ctx gbridge.Context) (bool, error) {
 					log.Println("query state of", ctx.Target.DeviceName())
