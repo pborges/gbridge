@@ -23,5 +23,5 @@ func (t OnOffCommand) Execute(ctx Context, args map[string]interface{}) proto.De
 }
 
 func (t OnOffCommand) Name() string {
-	return "action.agents.commands.OnOff"
+	return "action.devices.commands.OnOff"
 }

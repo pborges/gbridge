@@ -42,12 +42,12 @@ type CommandRequest struct {
 
 type ErrorResponse struct {
 	Status    CommandStatus `json:"status"`
-	ErrorCode ErrorCode     `json:"errorCode,omitempty"`
+	ErrorCode string     `json:"errorCode,omitempty"`
 }
 
 type CommandResponse struct {
-	Ids       []string        `json:"ids"`
-	States    json.RawMessage `json:"states"`
-	Status    CommandStatus   `json:"status"`
-	ErrorCode ErrorCode       `json:"errorCode,omitempty"`
+	Ids       []string               `json:"ids"`
+	States    map[string]interface{} `json:"states"`
+	Status    CommandStatus          `json:"status"`
+	ErrorCode string              `json:"errorCode,omitempty"`
 }

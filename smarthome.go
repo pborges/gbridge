@@ -18,44 +18,48 @@ type SmartHome struct {
 	lock   sync.RWMutex
 }
 
+func (s *SmartHome) decodeAndHandle(agent agentContext, r io.Reader) proto.IntentMessageResponse {
+	req := proto.IntentMessageRequest{}
+
+	if err := json.NewDecoder(r).Decode(&req); err != nil {
+		log.Println("error decoding request:", err)
+	}
+
+	res := proto.IntentMessageResponse{
+		RequestId: req.RequestId,
+	}
+
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	for _, i := range req.Inputs {
+		log.Printf("[%s] Intent: %s-> %s\n", agent.AgentUserId, i.Intent, string(i.Payload))
+		switch i.Intent {
+		case "action.devices.SYNC":
+			res.Payload = s.handleSyncIntent(agent)
+		case "action.devices.EXECUTE":
+			requestBody := proto.ExecRequest{}
+			if err := json.Unmarshal(i.Payload, &requestBody); err == nil {
+				res.Payload = s.handleExecuteIntent(agent, requestBody)
+			} else {
+				res.Payload = proto.ErrorResponse{
+					Status:    proto.CommandStatusError,
+					ErrorCode: proto.ErrorCodeProtocolError.Error(),
+				}
+			}
+		case "action.devices.QUERY":
+			//todo handle query
+		}
+	}
+	return res
+}
+
 func (s *SmartHome) Handle() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
 		if agent, ok := s.agents[oauth.GetAgentUserIdFromHeader(r)]; ok {
-			req := proto.IntentMessageRequest{}
-
-			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-				log.Println("error decoding request:", err)
-			}
-
-			res := proto.IntentMessageResponse{
-				RequestId: req.RequestId,
-			}
-
-			s.lock.RLock()
-			defer s.lock.RUnlock()
-
-			for _, i := range req.Inputs {
-				log.Printf("[%s] Intent: %s-> %s\n", agent.AgentUserId, i.Intent, string(i.Payload))
-				switch i.Intent {
-				case "action.devices.SYNC":
-					res.Payload = s.handleSyncIntent(agent)
-				case "action.devices.EXECUTE":
-					requestBody := proto.ExecRequest{}
-					if err := json.Unmarshal(i.Payload, &requestBody); err == nil {
-						res.Payload = s.handleExecuteIntent(agent, requestBody)
-					} else {
-						res.Payload = proto.ErrorResponse{
-							Status:    proto.CommandStatusError,
-							ErrorCode: proto.ErrorCodeProtocolError,
-						}
-					}
-				case "action.devices.QUERY":
-					//todo handle query
-				}
-			}
-
+			res := s.decodeAndHandle(agent, r.Body)
 			if err := json.NewEncoder(io.MultiWriter(w, log.Writer())).Encode(res); err != nil {
 				log.Println("error encoding sync response:", err)
 				http.Error(w, "error encoding sync response: "+err.Error(), http.StatusInternalServerError)
@@ -80,38 +84,47 @@ func (s *SmartHome) handleExecuteIntent(agent agentContext, req proto.ExecReques
 	for _, c := range req.Commands {
 		// for each device
 		for _, d := range c.Devices {
-			if ctx, ok := agent.Devices[d.ID]; ok {
+			if devCtx, ok := agent.Devices[d.ID]; ok {
 				// execute all the things
 				for _, e := range c.Execution {
 					r := proto.CommandResponse{
 						Ids:       ids,
-						ErrorCode: proto.ErrorCodeNotSupported,
+						ErrorCode: proto.ErrorCodeNotSupported.Error(),
+						States:    make(map[string]interface{}),
 					}
+					r.States["online"] = true
+
 					// check all traits...
-					for _, trait := range ctx.DeviceTraits() {
+					for _, trait := range devCtx.DeviceTraits() {
 						// for all the commands...
 						for _, cmd := range trait.TraitCommands() {
 							// for the right command
 							if e.Command == cmd.Name() {
 								// and execute
-								r.ErrorCode = cmd.Execute(Context{Target: ctx}, e.Params)
+								ctx := Context{Target: devCtx}
+								if err := cmd.Execute(ctx, e.Params);err == nil {
+									r.ErrorCode = ""
+									for _, s := range trait.TraitStates(ctx) {
+										if s.Error == nil {
+											r.Status = proto.CommandStatusSuccess
+											r.States[s.Name] = s.Value
+										} else {
+											r.Status = proto.CommandStatusError
+											r.ErrorCode = s.Error.Error()
+											r.States["online"] = false
+											break
+										}
+									}
+								} else {
+									r.Status = proto.CommandStatusError
+									r.ErrorCode = err.Error()
+								}
 							}
 						}
 					}
 
-					if r.ErrorCode == nil {
-						r.Status = proto.CommandStatusSuccess
-					} else {
-						r.Status = proto.CommandStatusError
-					}
 					responseBody.Commands = append(responseBody.Commands, r)
 				}
-			} else {
-				responseBody.Commands = append(responseBody.Commands, proto.CommandResponse{
-					Ids:       ids,
-					Status:    proto.CommandStatusError,
-					ErrorCode: proto.ErrorCodeDeviceNotFound,
-				})
 			}
 		}
 	}
