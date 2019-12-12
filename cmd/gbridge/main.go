@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net/http"
+
 	"github.com/pborges/gbridge"
 	"github.com/pborges/gbridge/oauth"
 	"github.com/pborges/gbridge/proto"
-	"log"
-	"net/http"
 )
 
 var loginPage = `
@@ -111,6 +112,7 @@ func logger(next http.Handler) http.Handler {
 }
 
 func main() {
+	log.Println("Server started")
 	mux := http.NewServeMux()
 	authProvider := oauth.SimpleAuthenticationProvider{}
 	smartHome := gbridge.SmartHome{}
@@ -125,7 +127,6 @@ func main() {
 			} else if r.Method == http.MethodPost {
 				agentUserId := r.FormValue("agentUserId")
 				password := r.FormValue("password")
-
 				//todo: validate agentUserId and password...
 				if agentUserId != "" && password != "" {
 					log.Println("register agent", agentUserId)
@@ -160,6 +161,33 @@ func main() {
 				OnStateHandler: func(ctx gbridge.Context) (bool, proto.ErrorCode) {
 					log.Println("query state of", ctx.Target.DeviceName())
 					return false, nil
+				},
+			}},
+		Info: proto.DeviceInfo{
+			HwVersion: "1.0",
+		},
+	}); err != nil {
+		log.Fatal(err)
+	}
+
+	// register devices
+	if err := smartHome.RegisterDevice("pborges", gbridge.BasicDevice{
+		Id: "1234567891",
+		Name: proto.DeviceName{
+			Name: "Blind1",
+		},
+		Type: proto.DeviceTypeBlinds,
+		Traits: []gbridge.Trait{
+			gbridge.OpenCloseTrait{
+				DiscreteOnlyOpenClose: true,
+				QueryOnlyOpenClose:    false,
+				OnExecuteChange: func(ctx gbridge.Context, state bool) proto.DeviceError {
+					log.Println("open/close", ctx.Target.DeviceName(), "device", state)
+					return nil
+				},
+				OnStateHandler: func(ctx gbridge.Context) (float64, string, proto.ErrorCode, proto.ErrorCode) {
+					log.Println("query state of", ctx.Target.DeviceName())
+					return 100.0, "DOWN", nil, nil
 				},
 			}},
 		Info: proto.DeviceInfo{

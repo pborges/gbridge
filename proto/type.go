@@ -8,4 +8,5 @@ const (
 	DeviceTypeOutlet     DeviceType = "action.devices.types.OUTLET"
 	DeviceTypeSwitch     DeviceType = "action.devices.types.SWITCH"
 	DeviceTypeThermostat DeviceType = "action.devices.types.THERMOSTAT"
+	DeviceTypeBlinds 	 DeviceType = "action.devices.types.BLINDS"
 )
