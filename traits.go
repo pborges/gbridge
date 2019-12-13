@@ -19,15 +19,16 @@ type OpenCloseTrait struct {
 	// openDirection []string	// not implementing in first concept
 	QueryOnlyOpenClose bool
 	OnExecuteChange  OpenCloseCommand
-	OnStateHandler   func(Context) (float64, string, proto.ErrorCode, proto.ErrorCode)
+	OnDirectionStateHandler   func(Context) (string, proto.ErrorCode)
+	OnPercentStateHandler func(Context) (float64, proto.ErrorCode)
 }
 
 func (t OpenCloseTrait) ValidateTrait() error {
 	if t.OnExecuteChange == nil {
 		return errors.New("OnExecuteChange cannot be nil")
 	}
-	if t.OnStateHandler == nil {
-		return errors.New("OnStateHandler cannot be nil")
+	if t.OnDirectionStateHandler == nil || t.OnPercentStateHandler == nil {
+		return errors.New("Both OnStateHandlers must be filled cannot be nil")
 	}
 
 	return nil
@@ -40,14 +41,15 @@ func (t OpenCloseTrait) TraitName() string {
 func (t OpenCloseTrait) TraitStates(ctx Context) []State {
 	var openPercentState State
 	openPercentState.Name = "openPercent"
+	openPercentState.Value, openPercentState.Error = t.OnPercentStateHandler(ctx)
 
 	// optional 
 	var openDirectionState State
 	openDirectionState.Name = "openDirection"
+	openDirectionState.Value, openDirectionState.Error = t.OnDirectionStateHandler(ctx) 
 
 	// check status handler
-	openPercentState.Value, openDirectionState.Value, openPercentState.Error, openDirectionState.Error = t.OnStateHandler(ctx)
-	return []State{openPercentState,openDirectionState}
+	return []State{openPercentState, openDirectionState}
 }
 
 func (t OpenCloseTrait) TraitCommands() []Command {
