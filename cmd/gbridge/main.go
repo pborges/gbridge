@@ -166,7 +166,7 @@ func main() {
 		Info: proto.DeviceInfo{
 			HwVersion: "1.0",
 		},
-	}); err != nil {
+		}); err != nil {
 		log.Fatal(err)
 	}
 
@@ -185,11 +185,21 @@ func main() {
 					log.Println("open/close", ctx.Target.DeviceName(), "device", state)
 					return nil
 				},
-				OnStateHandler: func(ctx gbridge.Context) (float64, string, proto.ErrorCode, proto.ErrorCode) {
+				OnPercentStateHandler: func(ctx gbridge.Context) (float64, proto.ErrorCode) {
 					log.Println("query state of", ctx.Target.DeviceName())
-					return 100.0, "DOWN", nil, nil
+					return 100.0, nil
+				},
+				OnDirectionStateHandler: func(ctx gbridge.Context) (string, proto.ErrorCode) {
+					log.Println("query state of", ctx.Target.DeviceName())
+					return "DOWN", nil
 				},
 			}},
+		Attributes: []gbridge.Attribute{
+				{
+					Name:  "openDirection",
+					Value: []string{"UP", "DOWN"},
+				},
+		},
 		Info: proto.DeviceInfo{
 			HwVersion: "1.0",
 		},
