@@ -1,9 +1,10 @@
 package gbridge
 
 import (
+	"bytes"
 	"encoding/json"
 	"github.com/pborges/gbridge/proto"
-	"bytes"
+	"os"
 	"strings"
 	"testing"
 )
@@ -90,7 +91,59 @@ func TestMultipleExecution(t *testing.T) {
 	buf := bytes.NewBufferString("")
 	json.NewEncoder(buf).Encode(res)
 
-	if strings.TrimSpace(buf.String()) != `{"requestId":"ff36a3cc-ec34-11e6-b1a0-64510650abcf","payload":{"commands":[{"ids":["123","456"],"states":{"on":true,"online":true},"status":"SUCCESS"},{"ids":["123","456"],"states":{"online":true},"status":"ERROR","errorCode":"turnedOff"}]}}`{
+	if strings.TrimSpace(buf.String()) != `{"requestId":"ff36a3cc-ec34-11e6-b1a0-64510650abcf","payload":{"commands":[{"ids":["123","456"],"states":{"on":true,"online":true},"status":"SUCCESS"},{"ids":["123","456"],"states":{"online":true},"status":"ERROR","errorCode":"turnedOff"}]}}` {
 		t.Error("unexpected response")
+	}
+}
+
+func TestSmartHome_encodeDeviceForSyncResponse(t *testing.T) {
+	home := SmartHome{}
+
+	dev := BasicDevice{
+		Id: "123",
+		Name: proto.DeviceName{
+			Name: "test device",
+		},
+		Type:   proto.DeviceTypeLight,
+		Traits: []Trait{},
+		Attributes: []Attribute{
+			{
+				Name:  "123",
+				Value: "456",
+			},
+			{
+				Name:  "openDirection",
+				Value: []string{"UP", "DOWN"},
+			},
+		},
+		Info: proto.DeviceInfo{},
+	}
+
+	encoded := home.encodeDeviceForSyncResponse(dev)
+
+	json.NewEncoder(os.Stdout).Encode(encoded)
+
+	if encoded.Name.Name != dev.Name.Name {
+		t.Error("names do not match")
+	}
+
+	if v, ok := encoded.Attributes["123"]; ok {
+		if v != "456" {
+			t.Error("value for attribute 123 does not match")
+		}
+	} else {
+		t.Error("missing attribute 123")
+	}
+
+	if v, ok := encoded.Attributes["openDirection"]; ok {
+		if a, ok := v.([]string); ok {
+			if a[0] != "UP" || a[1] != "DOWN" {
+				t.Error("value for attribute openDirection does not match")
+			}
+		} else {
+			t.Error("value for attribute openDirection should be an array of strings")
+		}
+	} else {
+		t.Error("missing attribute openDirection")
 	}
 }

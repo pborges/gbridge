@@ -7,6 +7,7 @@ type Device interface {
 	DeviceName() proto.DeviceName
 	DeviceType() proto.DeviceType
 	DeviceTraits() []Trait
+	DeviceAttributes() []Attribute
 }
 
 type DeviceInfoProvider interface {
@@ -18,12 +19,13 @@ type DeviceRoomHintProvider interface {
 }
 
 type BasicDevice struct {
-	Id       string
-	Name     proto.DeviceName
-	Type     proto.DeviceType
-	Traits   []Trait
-	Info     proto.DeviceInfo
-	RoomHint string
+	Id         string
+	Name       proto.DeviceName
+	Type       proto.DeviceType
+	Traits     []Trait
+	Attributes []Attribute
+	Info       proto.DeviceInfo
+	RoomHint   string
 }
 
 func (d BasicDevice) DeviceRoomHint() string {
@@ -48,4 +50,8 @@ func (d BasicDevice) DeviceName() proto.DeviceName {
 
 func (d BasicDevice) DeviceTraits() []Trait {
 	return d.Traits
+}
+
+func (d BasicDevice) DeviceAttributes() []Attribute {
+	return d.Attributes
 }

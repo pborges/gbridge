@@ -102,7 +102,7 @@ func (s *SmartHome) handleExecuteIntent(agent agentContext, req proto.ExecReques
 							if e.Command == cmd.Name() {
 								// and execute
 								ctx := Context{Target: devCtx}
-								if err := cmd.Execute(ctx, e.Params);err == nil {
+								if err := cmd.Execute(ctx, e.Params); err == nil {
 									r.ErrorCode = ""
 									for _, s := range trait.TraitStates(ctx) {
 										if s.Error == nil {
@@ -131,42 +131,50 @@ func (s *SmartHome) handleExecuteIntent(agent agentContext, req proto.ExecReques
 	return responseBody
 }
 
+func (s *SmartHome) encodeDeviceForSyncResponse(dev Device) proto.Device {
+	devTraits := dev.DeviceTraits()
+	traits := make([]string, 0, len(devTraits))
+	for _, t := range dev.DeviceTraits() {
+		traits = append(traits, t.TraitName())
+	}
+
+	var info proto.DeviceInfo
+	if p, ok := dev.(DeviceInfoProvider); ok {
+		info = p.DeviceInfo()
+	}
+
+	var roomHint string
+	if p, ok := dev.(DeviceRoomHintProvider); ok {
+		roomHint = p.DeviceRoomHint()
+	}
+
+	d := proto.Device{
+		Id:         dev.DeviceId(),
+		Type:       dev.DeviceType(),
+		Traits:     traits,
+		Name:       dev.DeviceName(),
+		DeviceInfo: info,
+		RoomHint:   roomHint,
+		Attributes: make(map[string]interface{}),
+
+		//todo make interfaces for these types
+		CustomData:      make(map[string]interface{}),
+		WillReportState: false,
+	}
+
+	for _, a := range dev.DeviceAttributes() {
+		d.Attributes[a.Name] = a.Value
+	}
+
+	return d
+}
+
 func (s *SmartHome) handleSyncIntent(agent agentContext) proto.SyncResponse {
 	log.Printf("[%s] SYNC\n", agent.AgentUserId)
 
 	devices := make([]proto.Device, 0, len(agent.Devices))
 	for _, d := range agent.Devices {
-
-		devTraits := d.DeviceTraits()
-		traits := make([]string, 0, len(devTraits))
-		for _, t := range d.DeviceTraits() {
-			traits = append(traits, t.TraitName())
-		}
-
-		var info proto.DeviceInfo
-		if p, ok := d.(DeviceInfoProvider); ok {
-			info = p.DeviceInfo()
-		}
-
-		var roomHint string
-		if p, ok := d.(DeviceRoomHintProvider); ok {
-			roomHint = p.DeviceRoomHint()
-		}
-
-		dev := proto.Device{
-			Id:         d.DeviceId(),
-			Type:       d.DeviceType(),
-			Traits:     traits,
-			Name:       d.DeviceName(),
-			DeviceInfo: info,
-			RoomHint:   roomHint,
-
-			//todo make interfaces for these types
-			CustomData:      make(map[string]interface{}),
-			WillReportState: false,
-			Attributes:      struct{}{},
-		}
-		devices = append(devices, dev)
+		devices = append(devices, s.encodeDeviceForSyncResponse(d))
 	}
 	return proto.SyncResponse{
 		AgentUserId: agent.AgentUserId,
