@@ -183,7 +183,7 @@ func main() {
 				OpenDirection: []string{"UP","DOWN"},
 				QueryOnlyOpenClose: false,
 				OnExecuteChange: func(ctx gbridge.Context, params interface{}) proto.DeviceError {
-					log.Println("Percent of", ctx.Target.DeviceName(), "should be set to", params.openPercent)
+					log.Println("Percent of", ctx.Target.DeviceName(), "should be set to", params)
 					return nil
 				},
 				OnPercentStateHandler: func(ctx gbridge.Context) (float64, proto.ErrorCode) {

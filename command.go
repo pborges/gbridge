@@ -31,14 +31,14 @@ type OpenCloseCommand func(ctx Context, params interface{}) proto.DeviceError
 
 // Execute validates the request and calls the user defined handler for the device trait
 func (t OpenCloseCommand) Execute(ctx Context, args map[string]interface{}) proto.DeviceError {
-	// validate if our EXECUTE Request contains the "params" object so the handler can actually handle something
-	if val, ok := args["params"]; ok {
-		return t(ctx, val)	// call the handler with the "params" object
+	// validate if our EXECUTE Request contains the "openPercent" object so the handler can actually handle something
+	if val, ok := args["openPercent"]; ok {
+		return t(ctx, val) 
 	}
 	return proto.ErrorCodeProtocolError
 }
 
 // Name returns the intent for this Trait
-func(t OpenCloseCommand) Name() string{
+func (t OpenCloseCommand) Name() string {
 	return "action.devices.commands.OpenClose"
 }
