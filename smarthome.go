@@ -187,6 +187,13 @@ func (s *SmartHome) RegisterDevice(agentUserId string, dev Device) error {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
+	// validate the device and its traits
+	for _, t := range dev.DeviceTraits() {
+		if err := t.ValidateTrait(); err != nil {
+			return err
+		}
+	}
+
 	if s.agents == nil {
 		s.agents = make(map[string]agentContext)
 	}
