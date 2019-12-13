@@ -13,7 +13,7 @@ type Token struct {
 type AuthenticationProvider interface {
 	GenerateAuthCode(clientId string, agentUserId string) (string, error)
 	GenerateToken(clientId string, clientSecret string, authCode string) (Token, error)
-	GetAgentUserIdForToken(token string) (agentUserId string, refresh bool, err error)
+	GetAgentUserIDForToken(token string) (agentUserId string, refresh bool, err error)
 }
 
 // a very simple authentication provider

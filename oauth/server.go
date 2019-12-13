@@ -25,7 +25,7 @@ type Server struct {
 func (s Server) Authenticate(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		accessToken := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
-		if agentUserId, _, err := s.AuthenticationProvider.GetAgentUserIdForToken(accessToken); err == nil {
+		if agentUserId, _, err := s.AuthenticationProvider.GetAgentUserIDForToken(accessToken); err == nil {
 			SetAgentUserIdHeader(r, agentUserId)
 			next(w, r)
 		} else {

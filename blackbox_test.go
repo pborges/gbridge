@@ -56,7 +56,7 @@ func TestMultipleExecution(t *testing.T) {
 		},
 	})
 
-	res := home.decodeAndHandle(home.agents["test"],
+	res := home.decodeAndHandle("test",
 		strings.NewReader(`{
 					  "requestId": "ff36a3cc-ec34-11e6-b1a0-64510650abcf",
 					  "inputs": [{
@@ -104,16 +104,10 @@ func TestSmartHome_encodeDeviceForSyncResponse(t *testing.T) {
 		Name: proto.DeviceName{
 			Name: "test device",
 		},
-		Type:   proto.DeviceTypeLight,
-		Traits: []Trait{},
-		Attributes: []Attribute{
-			{
-				Name:  "123",
-				Value: "456",
-			},
-			{
-				Name:  "openDirection",
-				Value: []string{"UP", "DOWN"},
+		Type: proto.DeviceTypeLight,
+		Traits: []Trait{
+			OnOffTrait{
+				CommandOnlyOnOff: true,
 			},
 		},
 		Info: proto.DeviceInfo{},
@@ -127,23 +121,11 @@ func TestSmartHome_encodeDeviceForSyncResponse(t *testing.T) {
 		t.Error("names do not match")
 	}
 
-	if v, ok := encoded.Attributes["123"]; ok {
-		if v != "456" {
-			t.Error("value for attribute 123 does not match")
+	if v, ok := encoded.Attributes["commandOnlyOnOff"]; ok {
+		if v != true {
+			t.Error("value for attribute commandOnlyOnOff does not match")
 		}
 	} else {
-		t.Error("missing attribute 123")
-	}
-
-	if v, ok := encoded.Attributes["openDirection"]; ok {
-		if a, ok := v.([]string); ok {
-			if a[0] != "UP" || a[1] != "DOWN" {
-				t.Error("value for attribute openDirection does not match")
-			}
-		} else {
-			t.Error("value for attribute openDirection should be an array of strings")
-		}
-	} else {
-		t.Error("missing attribute openDirection")
+		t.Error("missing attribute commandOnlyOnOff")
 	}
 }

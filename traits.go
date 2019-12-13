@@ -9,6 +9,7 @@ type Trait interface {
 	TraitName() string
 	TraitCommands() []Command
 	TraitStates(Context) []State
+	TraitAttributes() []Attribute
 	ValidateTrait() error
 }
 
@@ -43,4 +44,13 @@ func (t OnOffTrait) TraitStates(ctx Context) []State {
 
 func (t OnOffTrait) TraitCommands() []Command {
 	return []Command{t.OnExecuteChange}
+}
+
+func (t OnOffTrait) TraitAttributes() []Attribute {
+	return []Attribute{
+		{
+			Name:  "commandOnlyOnOff",
+			Value: t.CommandOnlyOnOff,
+		},
+	}
 }

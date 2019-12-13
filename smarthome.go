@@ -131,8 +131,13 @@ func (s *SmartHome) handleExecuteIntent(agentUserId string, req proto.ExecReques
 func (s *SmartHome) encodeDeviceForSyncResponse(dev Device) proto.Device {
 	devTraits := dev.DeviceTraits()
 	traits := make([]string, 0, len(devTraits))
+	attributes := make(map[string]interface{})
+
 	for _, t := range dev.DeviceTraits() {
 		traits = append(traits, t.TraitName())
+		for _, a := range t.TraitAttributes() {
+			attributes[a.Name] = a.Value
+		}
 	}
 
 	var info proto.DeviceInfo
@@ -152,15 +157,11 @@ func (s *SmartHome) encodeDeviceForSyncResponse(dev Device) proto.Device {
 		Name:       dev.DeviceName(),
 		DeviceInfo: info,
 		RoomHint:   roomHint,
-		Attributes: make(map[string]interface{}),
+		Attributes: attributes,
 
 		//todo make interfaces for these types
 		CustomData:      make(map[string]interface{}),
 		WillReportState: false,
-	}
-
-	for _, a := range dev.DeviceAttributes() {
-		d.Attributes[a.Name] = a.Value
 	}
 
 	return d
