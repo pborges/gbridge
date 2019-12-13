@@ -107,7 +107,7 @@ func (m *SimpleAuthenticationProvider) GenerateToken(clientId string, clientSecr
 	return Token{}, errors.New("unknown client")
 }
 
-func (m *SimpleAuthenticationProvider) GetAgentUserIdForToken(token string) (agentUserId string, refresh bool, err error) {
+func (m *SimpleAuthenticationProvider) GetAgentUserIDForToken(token string) (agentUserId string, refresh bool, err error) {
 	m.lock.Lock()
 	defer m.lock.Unlock()
 
