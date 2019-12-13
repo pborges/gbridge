@@ -18,7 +18,7 @@ type SmartHome struct {
 	lock   sync.RWMutex
 }
 
-func (s *SmartHome) decodeAndHandle(agent agentContext, r io.Reader) proto.IntentMessageResponse {
+func (s *SmartHome) decodeAndHandle(agentUserId string, r io.Reader) proto.IntentMessageResponse {
 	req := proto.IntentMessageRequest{}
 
 	if err := json.NewDecoder(r).Decode(&req); err != nil {
@@ -33,14 +33,14 @@ func (s *SmartHome) decodeAndHandle(agent agentContext, r io.Reader) proto.Inten
 	defer s.lock.RUnlock()
 
 	for _, i := range req.Inputs {
-		log.Printf("[%s] Intent: %s-> %s\n", agent.AgentUserId, i.Intent, string(i.Payload))
+		log.Printf("[%s] Intent: %s-> %s\n", agentUserId, i.Intent, string(i.Payload))
 		switch i.Intent {
 		case "action.devices.SYNC":
-			res.Payload = s.handleSyncIntent(agent)
+			res.Payload = s.handleSyncIntent(agentUserId)
 		case "action.devices.EXECUTE":
 			requestBody := proto.ExecRequest{}
 			if err := json.Unmarshal(i.Payload, &requestBody); err == nil {
-				res.Payload = s.handleExecuteIntent(agent, requestBody)
+				res.Payload = s.handleExecuteIntent(agentUserId, requestBody)
 			} else {
 				res.Payload = proto.ErrorResponse{
 					Status:    proto.CommandStatusError,
@@ -58,20 +58,16 @@ func (s *SmartHome) Handle() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 
-		if agent, ok := s.agents[oauth.GetAgentUserIdFromHeader(r)]; ok {
-			res := s.decodeAndHandle(agent, r.Body)
-			if err := json.NewEncoder(io.MultiWriter(w, log.Writer())).Encode(res); err != nil {
-				log.Println("error encoding sync response:", err)
-				http.Error(w, "error encoding sync response: "+err.Error(), http.StatusInternalServerError)
-			}
-		} else {
-			http.Error(w, "unable to find agentUserId", http.StatusInternalServerError)
+		res := s.decodeAndHandle(oauth.GetAgentUserIdFromHeader(r), r.Body)
+		if err := json.NewEncoder(io.MultiWriter(w, log.Writer())).Encode(res); err != nil {
+			log.Println("error encoding response:", err)
+			http.Error(w, "error encoding response: "+err.Error(), http.StatusInternalServerError)
 		}
 	}
 }
 
-func (s *SmartHome) handleExecuteIntent(agent agentContext, req proto.ExecRequest) proto.ExecResponse {
-	log.Printf("[%s] EXEC: %+v\n", agent.AgentUserId, req)
+func (s *SmartHome) handleExecuteIntent(agentUserId string, req proto.ExecRequest) proto.ExecResponse {
+	log.Printf("[%s] EXEC: %+v\n", agentUserId, req)
 
 	var ids []string
 	for _, c := range req.Commands {
@@ -81,49 +77,50 @@ func (s *SmartHome) handleExecuteIntent(agent agentContext, req proto.ExecReques
 	}
 	responseBody := proto.ExecResponse{}
 	// for each command
-	for _, c := range req.Commands {
-		// for each device
-		for _, d := range c.Devices {
-			if devCtx, ok := agent.Devices[d.ID]; ok {
-				// execute all the things
-				for _, e := range c.Execution {
-					r := proto.CommandResponse{
-						Ids:       ids,
-						ErrorCode: proto.ErrorCodeNotSupported.Error(),
-						States:    make(map[string]interface{}),
-					}
-					r.States["online"] = true
+	if agent, ok := s.agents[agentUserId]; ok {
+		for _, c := range req.Commands {
+			// for each device
+			for _, d := range c.Devices {
+				if devCtx, ok := agent.Devices[d.ID]; ok {
+					// execute all the things
+					for _, e := range c.Execution {
+						r := proto.CommandResponse{
+							Ids:       ids,
+							ErrorCode: proto.ErrorCodeNotSupported.Error(),
+							States:    make(map[string]interface{}),
+						}
+						r.States["online"] = true
 
-					// check all traits...
-					for _, trait := range devCtx.DeviceTraits() {
-						// for all the commands...
-						for _, cmd := range trait.TraitCommands() {
-							// for the right command
-							if e.Command == cmd.Name() {
-								// and execute
-								ctx := Context{Target: devCtx}
-								if err := cmd.Execute(ctx, e.Params); err == nil {
-									r.ErrorCode = ""
-									for _, s := range trait.TraitStates(ctx) {
-										if s.Error == nil {
-											r.Status = proto.CommandStatusSuccess
-											r.States[s.Name] = s.Value
-										} else {
-											r.Status = proto.CommandStatusError
-											r.ErrorCode = s.Error.Error()
-											r.States["online"] = false
-											break
+						// check all traits...
+						for _, trait := range devCtx.DeviceTraits() {
+							// for all the commands...
+							for _, cmd := range trait.TraitCommands() {
+								// for the right command
+								if e.Command == cmd.Name() {
+									// and execute
+									ctx := Context{Target: devCtx}
+									if err := cmd.Execute(ctx, e.Params); err == nil {
+										r.ErrorCode = ""
+										for _, s := range trait.TraitStates(ctx) {
+											if s.Error == nil {
+												r.Status = proto.CommandStatusSuccess
+												r.States[s.Name] = s.Value
+											} else {
+												r.Status = proto.CommandStatusError
+												r.ErrorCode = s.Error.Error()
+												r.States["online"] = false
+												break
+											}
 										}
+									} else {
+										r.Status = proto.CommandStatusError
+										r.ErrorCode = err.Error()
 									}
-								} else {
-									r.Status = proto.CommandStatusError
-									r.ErrorCode = err.Error()
 								}
 							}
 						}
+						responseBody.Commands = append(responseBody.Commands, r)
 					}
-
-					responseBody.Commands = append(responseBody.Commands, r)
 				}
 			}
 		}
@@ -169,15 +166,18 @@ func (s *SmartHome) encodeDeviceForSyncResponse(dev Device) proto.Device {
 	return d
 }
 
-func (s *SmartHome) handleSyncIntent(agent agentContext) proto.SyncResponse {
-	log.Printf("[%s] SYNC\n", agent.AgentUserId)
+func (s *SmartHome) handleSyncIntent(agentUserId string) proto.SyncResponse {
+	log.Printf("[%s] SYNC\n", agentUserId)
 
-	devices := make([]proto.Device, 0, len(agent.Devices))
-	for _, d := range agent.Devices {
-		devices = append(devices, s.encodeDeviceForSyncResponse(d))
+	devices := make([]proto.Device, 0)
+	if agent, ok := s.agents[agentUserId]; ok {
+		for _, d := range agent.Devices {
+			devices = append(devices, s.encodeDeviceForSyncResponse(d))
+		}
 	}
+
 	return proto.SyncResponse{
-		AgentUserId: agent.AgentUserId,
+		AgentUserId: agentUserId,
 		Devices:     devices,
 	}
 }
