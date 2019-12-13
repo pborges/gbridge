@@ -13,16 +13,17 @@ type Trait interface {
 	ValidateTrait() error
 }
 
-// Provided second implementation for blinds
+// OpenCloseTrait provides an implementation of the Smart Home OpenClose Trait Schema from Google Smart Home Actions
 type OpenCloseTrait struct {
 	DiscreteOnlyOpenClose bool
-	// openDirection []string	// not implementing in first concept
+	OpenDirection []string
 	QueryOnlyOpenClose bool
 	OnExecuteChange  OpenCloseCommand
 	OnDirectionStateHandler   func(Context) (string, proto.ErrorCode)
 	OnPercentStateHandler func(Context) (float64, proto.ErrorCode)
 }
 
+// ValidateTrait checks if all required attributes and handlers are created/set
 func (t OpenCloseTrait) ValidateTrait() error {
 	if t.OnExecuteChange == nil {
 		return errors.New("OnExecuteChange cannot be nil")
@@ -34,10 +35,12 @@ func (t OpenCloseTrait) ValidateTrait() error {
 	return nil
 }
 
+// TraitName returns the string how google defines this traits name
 func (t OpenCloseTrait) TraitName() string {
 	return "action.devices.traits.OpenClose"
 }
 
+// TraitStates parses the diffrent state attributes and calls the corresponding handlers
 func (t OpenCloseTrait) TraitStates(ctx Context) []State {
 	var openPercentState State
 	openPercentState.Name = "openPercent"
@@ -52,9 +55,29 @@ func (t OpenCloseTrait) TraitStates(ctx Context) []State {
 	return []State{openPercentState, openDirectionState}
 }
 
+
 func (t OpenCloseTrait) TraitCommands() []Command {
 	return []Command{t.OnExecuteChange}
 }
+
+// TraitAttributes defines all Attributes of the OpenCloseTrait
+func (t OpenCloseTrait) TraitAttributes() []Attribute {
+	return []Attribute{
+		{
+			Name:  "discreteOnlyOpenClose",
+			Value: t.DiscreteOnlyOpenClose,
+		},
+		{
+			Name: "openDirection",
+			Value: t.OpenDirection,
+		},
+		{
+			Name: "queryOnlyOpenClose",
+			Value: t.QueryOnlyOpenClose,
+		},
+	}
+}
+
 
 // Provided Impl, but users SHOULD be able to make their own Traits easy enough by copypasta
 type OnOffTrait struct {

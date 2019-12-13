@@ -26,18 +26,19 @@ func (t OnOffCommand) Name() string {
 	return "action.devices.commands.OnOff"
 }
 
-type OpenCloseCommand func(ctx Context, state bool) proto.DeviceError
+// OpenCloseCommand defines how a function should handle this specific trait
+type OpenCloseCommand func(ctx Context, params interface{}) proto.DeviceError
 
+// Execute validates the request and calls the user defined handler for the device trait
 func (t OpenCloseCommand) Execute(ctx Context, args map[string]interface{}) proto.DeviceError {
-	if val, ok := args["openPercent"]; ok {
-		if state, ok := val.(bool); ok {
-			return t(ctx, state)
-		}
-		return proto.ErrorCodeNotSupported
+	// validate if our EXECUTE Request contains the "params" object so the handler can actually handle something
+	if val, ok := args["params"]; ok {
+		return t(ctx, val)	// call the handler with the "params" object
 	}
 	return proto.ErrorCodeProtocolError
 }
 
+// Name returns the intent for this Trait
 func(t OpenCloseCommand) Name() string{
 	return "action.devices.commands.OpenClose"
 }
