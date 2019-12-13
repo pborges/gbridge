@@ -180,9 +180,10 @@ func main() {
 		Traits: []gbridge.Trait{
 			gbridge.OpenCloseTrait{
 				DiscreteOnlyOpenClose: true,
-				QueryOnlyOpenClose:    false,
-				OnExecuteChange: func(ctx gbridge.Context, state bool) proto.DeviceError {
-					log.Println("open/close", ctx.Target.DeviceName(), "device", state)
+				OpenDirection: []string{"UP","DOWN"},
+				QueryOnlyOpenClose: false,
+				OnExecuteChange: func(ctx gbridge.Context, params interface{}) proto.DeviceError {
+					log.Println("Percent of", ctx.Target.DeviceName(), "should be set to", params.openPercent)
 					return nil
 				},
 				OnPercentStateHandler: func(ctx gbridge.Context) (float64, proto.ErrorCode) {
@@ -194,12 +195,6 @@ func main() {
 					return "DOWN", nil
 				},
 			}},
-		Attributes: []gbridge.Attribute{
-				{
-					Name:  "openDirection",
-					Value: []string{"UP", "DOWN"},
-				},
-		},
 		Info: proto.DeviceInfo{
 			HwVersion: "1.0",
 		},
