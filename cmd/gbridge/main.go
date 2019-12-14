@@ -141,10 +141,10 @@ func main() {
 		},
 	}
 
-	// register clients
+	// register O-Auth clients with clientID and clientSecret 
 	authProvider.RegisterClient("123456", "654321")
 
-	// register device
+	// register device for agentUserID(User) pborges
 	if err := smartHome.RegisterDevice("pborges", gbridge.BasicDevice{
 		Id: "1234567890",
 		Name: proto.DeviceName{
@@ -155,10 +155,12 @@ func main() {
 			gbridge.OnOffTrait{
 				CommandOnlyOnOff: false,
 				OnExecuteChange: func(ctx gbridge.Context, state bool) proto.DeviceError {
+					// Here you should handle how your device is turned on.
 					log.Println("turn", ctx.Target.DeviceName(), "device", state)
 					return nil
 				},
 				OnStateHandler: func(ctx gbridge.Context) (bool, proto.ErrorCode) {
+					// Here you should report the state of your device
 					log.Println("query state of", ctx.Target.DeviceName())
 					return false, nil
 				},
@@ -183,10 +185,12 @@ func main() {
 				OpenDirection:         []gbridge.OpenCloseTraitDirection{gbridge.OpenCloseTraitDirectionUp, gbridge.OpenCloseTraitDirectionDown},
 				QueryOnlyOpenClose:    false,
 				OnExecuteChange: func(ctx gbridge.Context, openPercent float64, openDirection gbridge.OpenCloseTraitDirection) proto.DeviceError {
+					// Here you can handle how your device is actually set to different openPercent values
 					log.Println("Percent of", ctx.Target.DeviceName(), "should be set to", openPercent)
 					return nil
 				},
 				OnStateHandler: func(ctx gbridge.Context) ([]gbridge.OpenState, proto.ErrorCode) {
+					// Here you should return your device state
 					log.Println("query state of", ctx.Target.DeviceName())
 					curOpenState := gbridge.OpenState{OpenPercent: 100.0, OpenDirection: gbridge.OpenCloseTraitDirectionUp}
 					return []gbridge.OpenState{curOpenState}, nil
