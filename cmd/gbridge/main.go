@@ -144,7 +144,7 @@ func main() {
 	// register clients
 	authProvider.RegisterClient("123456", "654321")
 
-	// register devices
+	// register device
 	if err := smartHome.RegisterDevice("pborges", gbridge.BasicDevice{
 		Id: "1234567890",
 		Name: proto.DeviceName{
@@ -170,16 +170,16 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// register devices
+	// register device
 	if err := smartHome.RegisterDevice("pborges", gbridge.BasicDevice{
 		Id: "1234567891",
 		Name: proto.DeviceName{
-			Name: "Blind1",
+			Name: "Complicated Blinds",
 		},
 		Type: proto.DeviceTypeBlinds,
 		Traits: []gbridge.Trait{
-			gbridge.OpenCloseTrait{
-				DiscreteOnlyOpenClose: true,
+			gbridge.MultiDirectionOpenCloseTrait{
+				DiscreteOnlyOpenClose: false,
 				OpenDirection:         []gbridge.OpenCloseTraitDirection{gbridge.OpenCloseTraitDirectionUp, gbridge.OpenCloseTraitDirectionDown},
 				QueryOnlyOpenClose:    false,
 				OnExecuteChange: func(ctx gbridge.Context, openPercent float64, openDirection gbridge.OpenCloseTraitDirection) proto.DeviceError {
@@ -190,6 +190,33 @@ func main() {
 					log.Println("query state of", ctx.Target.DeviceName())
 					curOpenState := gbridge.OpenState{OpenPercent: 100.0, OpenDirection: gbridge.OpenCloseTraitDirectionUp}
 					return []gbridge.OpenState{curOpenState}, nil
+				},
+			}},
+		Info: proto.DeviceInfo{
+			HwVersion: "1.0",
+		},
+	}); err != nil {
+		log.Fatal(err)
+	}
+
+	// register device
+	if err := smartHome.RegisterDevice("pborges", gbridge.BasicDevice{
+		Id: "1234567892",
+		Name: proto.DeviceName{
+			Name: "Simple Blinds",
+		},
+		Type: proto.DeviceTypeBlinds,
+		Traits: []gbridge.Trait{
+			gbridge.OpenCloseTrait{
+				DiscreteOnlyOpenClose: true,
+				QueryOnlyOpenClose:    false,
+				OnExecuteChange: func(ctx gbridge.Context, openPercent float64) proto.DeviceError {
+					log.Println("Percent of", ctx.Target.DeviceName(), "should be set to", openPercent)
+					return nil
+				},
+				OnStateHandler: func(ctx gbridge.Context) (float64, proto.ErrorCode) {
+					log.Println("query state of", ctx.Target.DeviceName())
+					return 100, nil
 				},
 			}},
 		Info: proto.DeviceInfo{

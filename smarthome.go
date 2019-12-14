@@ -187,8 +187,13 @@ func (s *SmartHome) RegisterDevice(agentUserId string, dev Device) error {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
+	reducedTraits := make(map[string]Trait)
+
 	// validate the device and its traits
 	for _, t := range dev.DeviceTraits() {
+		if _, ok := reducedTraits[t.TraitName()]; ok {
+			return errors.New("duplicate trait found: " + t.TraitName())
+		}
 		if err := t.ValidateTrait(); err != nil {
 			return err
 		}
