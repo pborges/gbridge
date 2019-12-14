@@ -188,7 +188,7 @@ func main() {
 				},
 				OnStateHandler: func(ctx gbridge.Context) (gbridge.OpenState, proto.ErrorCode) {
 					log.Println("query state of", ctx.Target.DeviceName())
-					curOpenState := gbridge.OpenState{100.0,gbridge.OpenCloseTraitDirectionUp, nil}
+					curOpenState := gbridge.OpenState{100.0,gbridge.OpenCloseTraitDirectionUp}
 					return curOpenState, nil
 				},
 			}},

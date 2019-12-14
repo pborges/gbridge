@@ -49,7 +49,6 @@ func (t OpenCloseTrait) TraitName() string {
 type OpenState struct{
 	OpenPercent float64
 	OpenDirection OpenCloseTraitDirection
-	Error proto.ErrorCode
 }
 
 // TraitStates parses the diffrent state attributes and calls the corresponding handlers
@@ -57,7 +56,6 @@ func (t OpenCloseTrait) TraitStates(ctx Context) []State {
 	 onOffState := State{
 		 Name: "on",
 		 Value: true,
-		 Error: nil,
 	 }
 	
 	handlerOpenState, err := t.OnStateHandler(ctx)
