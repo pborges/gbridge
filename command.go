@@ -27,14 +27,21 @@ func (t OnOffCommand) Name() string {
 }
 
 // OpenCloseCommand defines how a function should handle this specific trait
-type OpenCloseCommand func(ctx Context, params interface{}) proto.DeviceError
+type OpenCloseCommand func(ctx Context, openPercent float64, openDirection OpenCloseTraitDirection) proto.DeviceError
 
 // Execute validates the request and calls the user defined handler for the device trait
 func (t OpenCloseCommand) Execute(ctx Context, args map[string]interface{}) proto.DeviceError {
 	// validate if our EXECUTE Request contains the "openPercent" object so the handler can actually handle something
-	if val, ok := args["openPercent"]; ok {
-		if num, ok := val.(float64); ok {
-			return t(ctx, num)
+	openDirection := OpenCloseTraitDirectionNone
+	if argOpenPercent, ok := args["openPercent"]; ok {
+		if openPercent, ok := argOpenPercent.(float64); ok {
+			// if openDirection is specified, set it, otherwise lets use none
+			if argDir, ok := args["openDirection"]; ok {
+				if dir, ok := argDir.(string); ok {
+					openDirection = OpenCloseTraitDirection(dir)
+				}
+			}
+			return t(ctx, openPercent, openDirection)
 		}
 		return proto.ErrorCodeNotSupported
 	}

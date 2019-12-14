@@ -166,7 +166,7 @@ func main() {
 		Info: proto.DeviceInfo{
 			HwVersion: "1.0",
 		},
-		}); err != nil {
+	}); err != nil {
 		log.Fatal(err)
 	}
 
@@ -180,16 +180,16 @@ func main() {
 		Traits: []gbridge.Trait{
 			gbridge.OpenCloseTrait{
 				DiscreteOnlyOpenClose: true,
-				OpenDirection: []gbridge.OpenCloseTraitDirection{gbridge.OpenCloseTraitDirectionUp, gbridge.OpenCloseTraitDirectionDown},
-				QueryOnlyOpenClose: false,
-				OnExecuteChange: func(ctx gbridge.Context, params interface{}) proto.DeviceError {
-					log.Println("Percent of", ctx.Target.DeviceName(), "should be set to", params)
+				OpenDirection:         []gbridge.OpenCloseTraitDirection{gbridge.OpenCloseTraitDirectionUp, gbridge.OpenCloseTraitDirectionDown},
+				QueryOnlyOpenClose:    false,
+				OnExecuteChange: func(ctx gbridge.Context, openPercent float64, openDirection gbridge.OpenCloseTraitDirection) proto.DeviceError {
+					log.Println("Percent of", ctx.Target.DeviceName(), "should be set to", openPercent)
 					return nil
 				},
-				OnStateHandler: func(ctx gbridge.Context) (gbridge.OpenState, proto.ErrorCode) {
+				OnStateHandler: func(ctx gbridge.Context) ([]gbridge.OpenState, proto.ErrorCode) {
 					log.Println("query state of", ctx.Target.DeviceName())
-					curOpenState := gbridge.OpenState{100.0,gbridge.OpenCloseTraitDirectionUp}
-					return curOpenState, nil
+					curOpenState := gbridge.OpenState{OpenPercent: 100.0, OpenDirection: gbridge.OpenCloseTraitDirectionUp}
+					return []gbridge.OpenState{curOpenState}, nil
 				},
 			}},
 		Info: proto.DeviceInfo{

@@ -16,26 +16,27 @@ type Trait interface {
 // OpenCloseTrait provides an implementation of the Smart Home OpenClose Trait Schema from Google Smart Home Actions
 type OpenCloseTrait struct {
 	DiscreteOnlyOpenClose bool
-	OpenDirection []OpenCloseTraitDirection
-	QueryOnlyOpenClose bool
-	OnExecuteChange  OpenCloseCommand
-	OnStateHandler func(Context) (OpenState, proto.ErrorCode)
+	OpenDirection         []OpenCloseTraitDirection
+	QueryOnlyOpenClose    bool
+	OnExecuteChange       OpenCloseCommand
+	OnStateHandler        func(Context) ([]OpenState, proto.ErrorCode)
 }
 
-// OpenCloseTraitDirection represents the diffrent directions a device can open as a captivalized string defined by google
-type OpenCloseTraitDirection string 
+// OpenCloseTraitDirection represents the different directions a device can open as a capitalized string defined by google
+type OpenCloseTraitDirection string
+
+const OpenCloseTraitDirectionNone OpenCloseTraitDirection = ""
 const OpenCloseTraitDirectionUp OpenCloseTraitDirection = "UP"
 const OpenCloseTraitDirectionDown OpenCloseTraitDirection = "DOWN"
 const OpenCloseTraitDirectionLeft OpenCloseTraitDirection = "LEFT"
 const OpenCloseTraitDirectionRight OpenCloseTraitDirection = "RIGHT"
-
 
 // ValidateTrait checks if all required attributes and handlers are created/set
 func (t OpenCloseTrait) ValidateTrait() error {
 	if t.OnExecuteChange == nil {
 		return errors.New("OnExecuteChange cannot be nil")
 	}
-	if t.OnStateHandler == nil  {
+	if t.OnStateHandler == nil {
 		return errors.New("OnStateHandlers cannot be nil")
 	}
 	return nil
@@ -46,31 +47,30 @@ func (t OpenCloseTrait) TraitName() string {
 	return "action.devices.traits.OpenClose"
 }
 
-type OpenState struct{
-	OpenPercent float64
+type OpenState struct {
+	OpenPercent   float64
 	OpenDirection OpenCloseTraitDirection
 }
 
-// TraitStates parses the diffrent state attributes and calls the corresponding handlers
+// TraitStates parses the different state attributes and calls the corresponding handlers
 func (t OpenCloseTrait) TraitStates(ctx Context) []State {
-	 onOffState := State{
-		 Name: "on",
-		 Value: true,
-	 }
-	
+	onOffState := State{
+		Name:  "on",
+		Value: true,
+	}
+
 	handlerOpenState, err := t.OnStateHandler(ctx)
 
-	// return current state 
+	// return current state
 	curOpenState := State{
-		Name: "openState",
+		Name:  "openState",
 		Value: handlerOpenState,
 		Error: err,
 	}
 
 	// check status handler
-	return []State{onOffState,curOpenState}
+	return []State{onOffState, curOpenState}
 }
-
 
 func (t OpenCloseTrait) TraitCommands() []Command {
 	return []Command{t.OnExecuteChange}
@@ -84,15 +84,15 @@ func (t OpenCloseTrait) TraitAttributes() []Attribute {
 			Value: t.DiscreteOnlyOpenClose,
 		},
 		{
-			Name: "queryOnlyOpenClose",
+			Name:  "queryOnlyOpenClose",
 			Value: t.QueryOnlyOpenClose,
 		},
 	}
-	
-	// if optional Argument openDirection is set, add it to arguments. 
+
+	// if optional Argument openDirection is set, add it to arguments.
 	if len(t.OpenDirection) > 0 {
 		openDirectionArg := Attribute{
-			Name: "openDirection",
+			Name:  "openDirection",
 			Value: t.OpenDirection,
 		}
 		atr = append(atr, openDirectionArg)
@@ -101,8 +101,7 @@ func (t OpenCloseTrait) TraitAttributes() []Attribute {
 	return atr
 }
 
-
-// Provided Impl, but users SHOULD be able to make their own Traits easy enough by copypasta
+// OnOffTrait provides an implementation of the Smart Home OnOff Trait Schema from Google Smart Home Actions
 type OnOffTrait struct {
 	CommandOnlyOnOff bool
 	OnExecuteChange  OnOffCommand
