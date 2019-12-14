@@ -19,25 +19,25 @@ type OpenCloseTrait struct {
 	OpenDirection []OpenCloseTraitDirection
 	QueryOnlyOpenClose bool
 	OnExecuteChange  OpenCloseCommand
-	OnDirectionStateHandler   func(Context) (string, proto.ErrorCode)
-	OnPercentStateHandler func(Context) (float64, proto.ErrorCode)
+	OnStateHandler func(Context) (OpenState, proto.ErrorCode)
 }
 
+// OpenCloseTraitDirection represents the diffrent directions a device can open as a captivalized string defined by google
 type OpenCloseTraitDirection string 
 const OpenCloseTraitDirectionUp OpenCloseTraitDirection = "UP"
 const OpenCloseTraitDirectionDown OpenCloseTraitDirection = "DOWN"
 const OpenCloseTraitDirectionLeft OpenCloseTraitDirection = "LEFT"
 const OpenCloseTraitDirectionRight OpenCloseTraitDirection = "RIGHT"
 
+
 // ValidateTrait checks if all required attributes and handlers are created/set
 func (t OpenCloseTrait) ValidateTrait() error {
 	if t.OnExecuteChange == nil {
 		return errors.New("OnExecuteChange cannot be nil")
 	}
-	if t.OnDirectionStateHandler == nil || t.OnPercentStateHandler == nil {
-		return errors.New("Both OnStateHandlers must be filled cannot be nil")
+	if t.OnStateHandler == nil  {
+		return errors.New("OnStateHandlers cannot be nil")
 	}
-
 	return nil
 }
 
@@ -46,19 +46,31 @@ func (t OpenCloseTrait) TraitName() string {
 	return "action.devices.traits.OpenClose"
 }
 
+type OpenState struct{
+	OpenPercent float64
+	OpenDirection OpenCloseTraitDirection
+	Error proto.ErrorCode
+}
+
 // TraitStates parses the diffrent state attributes and calls the corresponding handlers
 func (t OpenCloseTrait) TraitStates(ctx Context) []State {
-	var openPercentState State
-	openPercentState.Name = "openPercent"
-	openPercentState.Value, openPercentState.Error = t.OnPercentStateHandler(ctx)
+	 onOffState := State{
+		 Name: "on",
+		 Value: true,
+		 Error: nil,
+	 }
+	
+	handlerOpenState, err := t.OnStateHandler(ctx)
 
-	// optional 
-	var openDirectionState State
-	openDirectionState.Name = "openDirection"
-	openDirectionState.Value, openDirectionState.Error = t.OnDirectionStateHandler(ctx) 
+	// return current state 
+	curOpenState := State{
+		Name: "openState",
+		Value: handlerOpenState,
+		Error: err,
+	}
 
 	// check status handler
-	return []State{openPercentState, openDirectionState}
+	return []State{onOffState,curOpenState}
 }
 
 
