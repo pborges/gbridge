@@ -16,12 +16,18 @@ type Trait interface {
 // OpenCloseTrait provides an implementation of the Smart Home OpenClose Trait Schema from Google Smart Home Actions
 type OpenCloseTrait struct {
 	DiscreteOnlyOpenClose bool
-	OpenDirection []string
+	OpenDirection []OpenCloseTraitDirection
 	QueryOnlyOpenClose bool
 	OnExecuteChange  OpenCloseCommand
 	OnDirectionStateHandler   func(Context) (string, proto.ErrorCode)
 	OnPercentStateHandler func(Context) (float64, proto.ErrorCode)
 }
+
+type OpenCloseTraitDirection string 
+const OpenCloseTraitDirectionUp OpenCloseTraitDirection = "UP"
+const OpenCloseTraitDirectionDown OpenCloseTraitDirection = "DOWN"
+const OpenCloseTraitDirectionLeft OpenCloseTraitDirection = "LEFT"
+const OpenCloseTraitDirectionRight OpenCloseTraitDirection = "RIGHT"
 
 // ValidateTrait checks if all required attributes and handlers are created/set
 func (t OpenCloseTrait) ValidateTrait() error {

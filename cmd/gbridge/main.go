@@ -180,7 +180,7 @@ func main() {
 		Traits: []gbridge.Trait{
 			gbridge.OpenCloseTrait{
 				DiscreteOnlyOpenClose: true,
-				OpenDirection: []string{"UP","DOWN"},
+				OpenDirection: []gbridge.OpenCloseTraitDirection{gbridge.OpenCloseTraitDirectionUp, gbridge.OpenCloseTraitDirectionDown},
 				QueryOnlyOpenClose: false,
 				OnExecuteChange: func(ctx gbridge.Context, params interface{}) proto.DeviceError {
 					log.Println("Percent of", ctx.Target.DeviceName(), "should be set to", params)
