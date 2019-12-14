@@ -33,7 +33,10 @@ type OpenCloseCommand func(ctx Context, params interface{}) proto.DeviceError
 func (t OpenCloseCommand) Execute(ctx Context, args map[string]interface{}) proto.DeviceError {
 	// validate if our EXECUTE Request contains the "openPercent" object so the handler can actually handle something
 	if val, ok := args["openPercent"]; ok {
-		return t(ctx, val) 
+		if num, ok := val.(float64); ok {
+			return t(ctx, num)
+		}
+		return proto.ErrorCodeNotSupported
 	}
 	return proto.ErrorCodeProtocolError
 }
