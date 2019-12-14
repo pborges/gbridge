@@ -68,20 +68,27 @@ func (t OpenCloseTrait) TraitCommands() []Command {
 
 // TraitAttributes defines all Attributes of the OpenCloseTrait
 func (t OpenCloseTrait) TraitAttributes() []Attribute {
-	return []Attribute{
+	atr := []Attribute{
 		{
 			Name:  "discreteOnlyOpenClose",
 			Value: t.DiscreteOnlyOpenClose,
-		},
-		{
-			Name: "openDirection",
-			Value: t.OpenDirection,
 		},
 		{
 			Name: "queryOnlyOpenClose",
 			Value: t.QueryOnlyOpenClose,
 		},
 	}
+	
+	// if optional Argument openDirection is set, add it to arguments. 
+	if len(t.OpenDirection) > 0 {
+		openDirectionArg := Attribute{
+			Name: "openDirection",
+			Value: t.OpenDirection,
+		}
+		atr = append(atr, openDirectionArg)
+	}
+
+	return atr
 }
 
 
