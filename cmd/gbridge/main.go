@@ -186,13 +186,10 @@ func main() {
 					log.Println("Percent of", ctx.Target.DeviceName(), "should be set to", params)
 					return nil
 				},
-				OnPercentStateHandler: func(ctx gbridge.Context) (float64, proto.ErrorCode) {
+				OnStateHandler: func(ctx gbridge.Context) (gbridge.OpenState, proto.ErrorCode) {
 					log.Println("query state of", ctx.Target.DeviceName())
-					return 100.0, nil
-				},
-				OnDirectionStateHandler: func(ctx gbridge.Context) (string, proto.ErrorCode) {
-					log.Println("query state of", ctx.Target.DeviceName())
-					return "DOWN", nil
+					curOpenState := gbridge.OpenState{100.0,gbridge.OpenCloseTraitDirectionUp, nil}
+					return curOpenState, nil
 				},
 			}},
 		Info: proto.DeviceInfo{
