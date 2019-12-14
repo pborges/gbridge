@@ -4,6 +4,7 @@ import (
 	"github.com/pborges/gbridge/proto"
 )
 
+// Command belongs to a device and handles the executing of functions. 
 type Command interface {
 	Name() string
 	// passing maps in functions feels dirty
@@ -12,6 +13,7 @@ type Command interface {
 
 type OnOffCommand func(ctx Context, state bool) proto.DeviceError
 
+// Execute checks if the arguments from the Intent Request are correct and passes them to the user defined execute handlers.
 func (t OnOffCommand) Execute(ctx Context, args map[string]interface{}) proto.DeviceError {
 	if val, ok := args["on"]; ok {
 		if state, ok := val.(bool); ok {
@@ -22,6 +24,7 @@ func (t OnOffCommand) Execute(ctx Context, args map[string]interface{}) proto.De
 	return proto.ErrorCodeProtocolError
 }
 
+// Name returns the Identifier String of the Command
 func (t OnOffCommand) Name() string {
 	return "action.devices.commands.OnOff"
 }
