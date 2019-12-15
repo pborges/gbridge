@@ -12,7 +12,7 @@ const charset = "abcdefghijklmnopqrstuvwxyz" +
 
 var src cryptoSource
 
-//GenerateRandomString generates an cryptographically secure string
+// GenerateRandomString generates an cryptographically secure string
 func GenerateRandomString(length int) string {
 	rnd := rand.New(src)
 	b := make([]byte, length)

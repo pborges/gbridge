@@ -155,7 +155,7 @@ func main() {
 			gbridge.OnOffTrait{
 				CommandOnlyOnOff: false,
 				OnExecuteChange: func(ctx gbridge.Context, state bool) proto.DeviceError {
-					// Here you should handle how your device is turned on.
+					// Here you should handle how your device is turned on or off.
 					log.Println("turn", ctx.Target.DeviceName(), "device", state)
 					return nil
 				},
