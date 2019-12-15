@@ -16,7 +16,8 @@ This libary is ported from [actionssdk-smart-home-nodejs](https://github.com/act
 * [https://github.com/actions-on-google/actionssdk-smart-home-nodejs](https://github.com/actions-on-google/actionssdk-smart-home-nodejs)
 * [https://console.actions.google.com/](https://console.actions.google.com/)
 
-### Instructions
+### Instructions 
+##### (these may not be up to date, google changed their process recently)
 1. Create an action.json file
 ```
     {
