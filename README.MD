@@ -76,7 +76,7 @@ This libary is ported from [actionssdk-smart-home-nodejs](https://github.com/act
 
 
 ### Example
-Please see `/cmd/gbridge/` for examples on how to use this libary. 
+Please see `/examples/gbridge/` for examples on how to use this libary. 
 
 
 # Notes
