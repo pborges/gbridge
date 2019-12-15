@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/pborges/gbridge/oauth"
 	"github.com/pborges/gbridge/proto"
-	"github.com/pborges/gbridge/traits"
 	"io"
 	"log"
 	"net/http"
@@ -188,7 +187,7 @@ func (s *SmartHome) RegisterDevice(agentUserId string, dev Device) error {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	reducedTraits := make(map[string]traits.Trait)
+	reducedTraits := make(map[string]Trait)
 
 	// validate the device and its traits
 	for _, t := range dev.DeviceTraits() {

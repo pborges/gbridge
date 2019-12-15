@@ -1,13 +1,12 @@
-package traits
+package gbridge
 
 import (
-	"github.com/pborges/gbridge"
 	"github.com/pborges/gbridge/proto"
 	"testing"
 )
 
 func TestDuplicateTraits(t *testing.T) {
-	dev := gbridge.BasicDevice{
+	dev := BasicDevice{
 		Id:   "",
 		Name: proto.DeviceName{},
 		Type: "",
@@ -27,7 +26,7 @@ func TestDuplicateTraits(t *testing.T) {
 		RoomHint: "",
 	}
 
-	home := gbridge.SmartHome{}
+	home := SmartHome{}
 
 	if err := home.RegisterDevice("test", dev); err == nil {
 		t.Error("You cannot register two traits with the same name")

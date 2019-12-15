@@ -1,8 +1,7 @@
-package traits
+package gbridge
 
 import (
 	"errors"
-	"github.com/pborges/gbridge"
 	"github.com/pborges/gbridge/proto"
 )
 
@@ -12,7 +11,7 @@ type MultiDirectionOpenCloseTrait struct {
 	OpenDirection         []OpenCloseTraitDirection //Array of strings. Optional. Required if the device supports opening and closing in more than one direction. Comma-separated list of directions in which this device can be opened. Valid options include: UP, DOWN, LEFT, RIGHT, IN, and OUT. For example, top-down bottom-up blinds may open either up or down.
 	QueryOnlyOpenClose    bool                      // Indicates if the device can only be queried for state information and cannot be controlled. Sensors that can only report open state should set this field to true.
 	OnExecuteChange       DirectionalOpenCloseCommand
-	OnStateHandler        func(gbridge.Context) ([]OpenState, proto.ErrorCode)
+	OnStateHandler        func(Context) ([]OpenState, proto.ErrorCode)
 }
 
 // OpenCloseTraitDirection represents the different directions a device can open as a capitalized string defined by google
@@ -46,8 +45,8 @@ type OpenState struct {
 }
 
 // TraitStates parses the different state attributes and calls the corresponding handlers
-func (t MultiDirectionOpenCloseTrait) TraitStates(ctx gbridge.Context) []gbridge.State {
-	onOffState := gbridge.State{
+func (t MultiDirectionOpenCloseTrait) TraitStates(ctx Context) []State {
+	onOffState := State{
 		Name:  "on",
 		Value: true,
 	}
@@ -55,14 +54,14 @@ func (t MultiDirectionOpenCloseTrait) TraitStates(ctx gbridge.Context) []gbridge
 	handlerOpenState, err := t.OnStateHandler(ctx)
 
 	// return current state
-	curOpenState := gbridge.State{
+	curOpenState := State{
 		Name:  "openState",
 		Value: handlerOpenState,
 		Error: err,
 	}
 
 	// check status handler
-	return []gbridge.State{onOffState, curOpenState}
+	return []State{onOffState, curOpenState}
 }
 
 func (t MultiDirectionOpenCloseTrait) TraitCommands() []Command {
@@ -70,8 +69,8 @@ func (t MultiDirectionOpenCloseTrait) TraitCommands() []Command {
 }
 
 // TraitAttributes defines all Attributes of the MultiDirectionOpenCloseTrait
-func (t MultiDirectionOpenCloseTrait) TraitAttributes() []gbridge.Attribute {
-	atr := []gbridge.Attribute{
+func (t MultiDirectionOpenCloseTrait) TraitAttributes() []Attribute {
+	atr := []Attribute{
 		{
 			Name:  "discreteOnlyOpenClose",
 			Value: t.DiscreteOnlyOpenClose,
@@ -84,7 +83,7 @@ func (t MultiDirectionOpenCloseTrait) TraitAttributes() []gbridge.Attribute {
 
 	// if optional Argument openDirection is set, add it to arguments.
 	if len(t.OpenDirection) > 0 {
-		openDirectionArg := gbridge.Attribute{
+		openDirectionArg := Attribute{
 			Name:  "openDirection",
 			Value: t.OpenDirection,
 		}
@@ -99,7 +98,7 @@ type OpenCloseTrait struct {
 	DiscreteOnlyOpenClose bool //Defaults to false. When set to true, this indicates that the device must either be fully open or fully closed (that is, it does not support values between 0% and 100%). An example of such a device may be a valve.
 	QueryOnlyOpenClose    bool
 	OnExecuteChange       OpenCloseCommand
-	OnStateHandler        func(gbridge.Context) (float64, proto.ErrorCode)
+	OnStateHandler        func(Context) (float64, proto.ErrorCode)
 }
 
 // ValidateTrait checks if all required attributes and handlers are created/set
@@ -119,8 +118,8 @@ func (t OpenCloseTrait) TraitName() string {
 }
 
 // TraitStates parses the different state attributes and calls the corresponding handlers
-func (t OpenCloseTrait) TraitStates(ctx gbridge.Context) []gbridge.State {
-	onOffState := gbridge.State{
+func (t OpenCloseTrait) TraitStates(ctx Context) []State {
+	onOffState := State{
 		Name:  "on",
 		Value: true,
 	}
@@ -128,14 +127,14 @@ func (t OpenCloseTrait) TraitStates(ctx gbridge.Context) []gbridge.State {
 	handlerOpenState, err := t.OnStateHandler(ctx)
 
 	// return current state
-	curOpenState := gbridge.State{
+	curOpenState := State{
 		Name:  "openState",
 		Value: handlerOpenState,
 		Error: err,
 	}
 
 	// check status handler
-	return []gbridge.State{onOffState, curOpenState}
+	return []State{onOffState, curOpenState}
 }
 
 func (t OpenCloseTrait) TraitCommands() []Command {
@@ -143,8 +142,8 @@ func (t OpenCloseTrait) TraitCommands() []Command {
 }
 
 // TraitAttributes defines all Attributes of the OpenCloseTrait
-func (t OpenCloseTrait) TraitAttributes() []gbridge.Attribute {
-	atr := []gbridge.Attribute{
+func (t OpenCloseTrait) TraitAttributes() []Attribute {
+	atr := []Attribute{
 		{
 			Name:  "discreteOnlyOpenClose",
 			Value: t.DiscreteOnlyOpenClose,

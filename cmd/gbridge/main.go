@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/pborges/gbridge/traits"
 	"log"
 	"net/http"
 
@@ -160,8 +159,8 @@ func main() {
 			Name: "Light 1",
 		},
 		Type: proto.DeviceTypeLight,
-		Traits: []traits.Trait{
-			traits.OnOffTrait{
+		Traits: []gbridge.Trait{
+			gbridge.OnOffTrait{
 				CommandOnlyOnOff: false,
 				OnExecuteChange: func(ctx gbridge.Context, state bool) proto.DeviceError {
 					// Here you should handle how your device is turned on or off.
@@ -188,21 +187,21 @@ func main() {
 			Name: "Complicated Blinds",
 		},
 		Type: proto.DeviceTypeBlinds,
-		Traits: []traits.Trait{
-			traits.MultiDirectionOpenCloseTrait{
+		Traits: []gbridge.Trait{
+			gbridge.MultiDirectionOpenCloseTrait{
 				DiscreteOnlyOpenClose: false,
-				OpenDirection:         []traits.OpenCloseTraitDirection{traits.OpenCloseTraitDirectionUp, traits.OpenCloseTraitDirectionDown},
+				OpenDirection:         []gbridge.OpenCloseTraitDirection{gbridge.OpenCloseTraitDirectionUp, gbridge.OpenCloseTraitDirectionDown},
 				QueryOnlyOpenClose:    false,
-				OnExecuteChange: func(ctx gbridge.Context, openPercent float64, openDirection traits.OpenCloseTraitDirection) proto.DeviceError {
+				OnExecuteChange: func(ctx gbridge.Context, openPercent float64, openDirection gbridge.OpenCloseTraitDirection) proto.DeviceError {
 					// Here you can handle how your device is actually set to different openPercent values
 					log.Println("Percent of", ctx.Target.DeviceName(), "should be set to", openPercent)
 					return nil
 				},
-				OnStateHandler: func(ctx gbridge.Context) ([]traits.OpenState, proto.ErrorCode) {
+				OnStateHandler: func(ctx gbridge.Context) ([]gbridge.OpenState, proto.ErrorCode) {
 					// Here you should return your device state
 					log.Println("query state of", ctx.Target.DeviceName())
-					curOpenState := traits.OpenState{OpenPercent: 100.0, OpenDirection: traits.OpenCloseTraitDirectionUp}
-					return []traits.OpenState{curOpenState}, nil
+					curOpenState := gbridge.OpenState{OpenPercent: 100.0, OpenDirection: gbridge.OpenCloseTraitDirectionUp}
+					return []gbridge.OpenState{curOpenState}, nil
 				},
 			}},
 		Info: proto.DeviceInfo{
@@ -219,8 +218,8 @@ func main() {
 			Name: "Simple Blinds",
 		},
 		Type: proto.DeviceTypeBlinds,
-		Traits: []traits.Trait{
-			traits.OpenCloseTrait{
+		Traits: []gbridge.Trait{
+			gbridge.OpenCloseTrait{
 				DiscreteOnlyOpenClose: true,
 				QueryOnlyOpenClose:    false,
 				OnExecuteChange: func(ctx gbridge.Context, openPercent float64) proto.DeviceError {
