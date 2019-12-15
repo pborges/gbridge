@@ -117,6 +117,20 @@ func main() {
 	authProvider := oauth.SimpleAuthenticationProvider{}
 	smartHome := gbridge.SmartHome{}
 
+	// register agents and clients
+	if dbExists, err := authProvider.Init("db.json"); err != nil {
+		log.Fatal(err)
+	} else if !dbExists {
+    // register O-Auth clients with clientID and clientSecret 
+		if err := authProvider.RegisterClient("123456", "654321"); err != nil {
+			log.Fatal(err)
+		}
+    // register agentUserIds, these are the credentials you give to the login page
+		if err := authProvider.RegisterAgent("pborges", "test"); err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	// configure the oauth server
 	oauthServer := oauth.Server{
 		AuthenticationProvider: &authProvider,
@@ -128,27 +142,21 @@ func main() {
 				agentUserId := r.FormValue("agentUserId")
 				password := r.FormValue("password")
 				//todo: validate agentUserId and password...
-				if agentUserId != "" && password != "" {
-					log.Println("register agent", agentUserId)
-					authProvider.RegisterAgent(agentUserId)
-
+				if err := authProvider.ValidateAgent(agentUserId, password); err == nil {
 					//This Handler must set up the agentUserId Header or the oauth cannot continue
 					oauth.SetAgentUserIdHeader(r, agentUserId)
 				} else {
-					http.Error(w, "invalid agentUserId", http.StatusInternalServerError)
+					http.Error(w, err.Error(), http.StatusInternalServerError)
 				}
 			}
 		},
 	}
 
-	// register O-Auth clients with clientID and clientSecret 
-	authProvider.RegisterClient("123456", "654321")
-
-	// register device for agentUserID(User) pborges
+  // register device
 	if err := smartHome.RegisterDevice("pborges", gbridge.BasicDevice{
 		Id: "1234567890",
 		Name: proto.DeviceName{
-			Name: "Light1",
+			Name: "Light 1",
 		},
 		Type: proto.DeviceTypeLight,
 		Traits: []gbridge.Trait{
