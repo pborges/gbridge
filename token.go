@@ -1,9 +1,9 @@
 package gbridge
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
-	"encoding/json"
 )
 
 type Token struct {
@@ -26,13 +26,13 @@ func (b *Bridge) HandleToken(w http.ResponseWriter, r *http.Request) {
 	log.Println("code:", code)
 
 	if clientId == "" || clientSecret == "" {
-		log.Println("missing ID or Secret")
+		log.Println("missing Identifier or Secret")
 		http.Redirect(w, r, "missing required parameter", http.StatusBadRequest)
 		return
 	}
 
 	if clientId != b.ClientId && clientSecret != b.ClientSecret {
-		log.Println("wrong ID or Secret")
+		log.Println("wrong Identifier or Secret")
 		http.Redirect(w, r, "incorrect client data", http.StatusBadRequest)
 		return
 	}

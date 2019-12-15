@@ -1,6 +1,8 @@
-package gbridge
+package proto
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 type IntentMessageRequest struct {
 	Inputs []struct {
@@ -34,39 +36,18 @@ type ExecResponse struct {
 }
 
 type CommandRequest struct {
-	Command string `json:"command"`
-	Params struct {
-		On         bool `json:"on"`
-		Brightness int  `json:"brightness"`
-	} `json:"params"`
+	Command string                 `json:"command"`
+	Params  map[string]interface{} `json:"params"`
 }
 
-type CommandStatus string
-
-const (
-	CommandStatusSuccess CommandStatus = "SUCCESS"
-	CommandStatusError   CommandStatus = "ERROR"
-)
-
-type DeviceState struct {
-	On         bool `json:"on"`
-	Online     bool `json:"online"`
-	Brightness int  `json:"brightness"`
+type ErrorResponse struct {
+	Status    CommandStatus `json:"status"`
+	ErrorCode string     `json:"errorCode,omitempty"`
 }
 
 type CommandResponse struct {
-	Ids       []string      `json:"ids"`
-	Status    CommandStatus `json:"status"`
-	States    DeviceState   `json:"states"`
-	ErrorCode DeviceError   `json:"errorCode"`
-}
-
-type QueryRequest struct {
-	Devices []struct {
-		ID string `json:"id"`
-	} `json:"devices"`
-}
-
-type QueryResponse struct {
-	Devices map[string]DeviceState `json:"devices"`
+	Ids       []string               `json:"ids"`
+	States    map[string]interface{} `json:"states"`
+	Status    CommandStatus          `json:"status"`
+	ErrorCode string              `json:"errorCode,omitempty"`
 }

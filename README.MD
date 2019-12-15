@@ -1,15 +1,23 @@
 # G Bridge
-## library for Actions on Google Home Control
-**WARNING** work in progress
+## Libary for Google Smart Home Actions
+**-- work in progress --** 
 
-porting from [actionssdk-smart-home-nodejs](https://github.com/actions-on-google/actionssdk-smart-home-nodejs)
+Google smart home lets users control your connected devices through the Google Home app and the Google Assistant, which is available on more than 1 billion devices, like smart speakers, phones, cars, TVs, headphones, watches, and more. To connect your device with the Google Assistant, you need to build a smart home Action. Assistant handles how users trigger your Action (in multiple languages) and provides you with relevant metadata through Home Graph (such as a specific device based on user’s room); all you need to do is respond to the requests in your service.
+
+This libary helps you to create a backend service for your Google Smart Home Action. 
+
+This libary is ported from [actionssdk-smart-home-nodejs](https://github.com/actions-on-google/actionssdk-smart-home-nodejs)
+
+# Philosopy
+-- TODO: Explain how this libary is structured.. e.g duck-typing and interfaces usage--
 
 ### Useful links
 * [https://developers.google.com/actions/smarthome/](https://developers.google.com/actions/smarthome/)
 * [https://github.com/actions-on-google/actionssdk-smart-home-nodejs](https://github.com/actions-on-google/actionssdk-smart-home-nodejs)
 * [https://console.actions.google.com/](https://console.actions.google.com/)
 
-### Instructions
+### Instructions 
+##### (these may not be up to date, google changed their process recently)
 1. Create an action.json file
 ```
     {
@@ -64,75 +72,14 @@ porting from [actionssdk-smart-home-nodejs](https://github.com/actions-on-google
 16. Select your project from the **Add New** section
 
 
+### GoDoc 
+--- TODO: Link to GODOC ----
+
 ### Example
-```
-package main
-
-import (
-	"net/http"
-	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/pborges/gbridge"
-	"log"
-	"os"
-)
-
-var addr = ":8085"
-
-func main() {
-	log.SetOutput(os.Stdout)
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
-
-	r := mux.NewRouter()
-
-	r.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.Println("UNKKNOWN:", r.RequestURI)
-	})
-
-	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("/")
-		fmt.Fprint(w, "Hello")
-	})
-
-	b := gbridge.Bridge{
-		ClientId:     "123456", //as long as this matches the settings "Account linking" on actions console it works
-		ClientSecret: "654321", //as long as this matches the settings "Account linking" on actions console it works
-	}
-
-	b.HandleExec(NewSwitch("1", "alarm"), func(dev gbridge.Device, req gbridge.CommandRequest, res *gbridge.CommandResponse) {
-		log.Printf("Exec Cmd: %+v\n", req)
-		res.Status = gbridge.CommandStatusSuccess
-		res.States.Online = true
-		res.States.On = req.Params.On
-		log.Printf("Exec Res: %+v\n", res)
-	})
-
-	r.HandleFunc("/oauth", b.HandleOauth)
-	r.HandleFunc("/token", b.HandleToken)
-	r.HandleFunc("/smarthome", b.HandleSmartHome)
-	log.Println("Listening:", addr)
-	log.Println(http.ListenAndServe(addr, r))
-}
-
-func NewSwitch(id string, name string) gbridge.Device {
-	d := gbridge.Device{
-		Id:     id,
-		Type:   gbridge.DeviceTypeSwitch,
-		Traits: []gbridge.DeviceTrait{gbridge.DeviceTraitOnOff},
-		Name: gbridge.DeviceName{
-			DefaultNames: []string{name},
-			Name:         name,
-			Nicknames:    []string{name},
-		},
-	}
-	return d
-}
+Please see `/cmd/gbridge/` for examples on how to use this libary. 
 
 
-```
 # Notes
 * If you push an update to actions.json, you might have to unlink your account in google home and re-link it for testing to work from your phone
 
-* See the /example folder for all the available examples. 
-
-* Place this service behind caddy or some other reverse proxy that does LetsEncrypt SSL, or do your own SSL encryption
+* Place this service behind caddy or some other reverse proxy that does LetsEncrypt SSL, or do your own SSL encryption. Google needs your service to be reachable via HTTPs and a valid SSL certificate.  

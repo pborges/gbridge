@@ -1,87 +1,62 @@
 package gbridge
 
-type DeviceType string
-
-const (
-	DeviceTypeCamera     DeviceType = "action.devices.types.CAMERA"
-	DeviceTypeLight      DeviceType = "action.devices.types.LIGHT"
-	DeviceTypeOutlet     DeviceType = "action.devices.types.OUTLET"
-	DeviceTypeSwitch     DeviceType = "action.devices.types.SWITCH"
-	DeviceTypeThermostat DeviceType = "action.devices.types.THERMOSTAT"
+import (
+	"github.com/pborges/gbridge/proto"
 )
 
-type DeviceTrait string
-
-const (
-	DeviceTraitBrightness       DeviceTrait = "action.devices.traits.Brightness"
-	DeviceTraitCameraStream     DeviceTrait = "action.devices.traits.CameraStream"
-	DeviceTraitColorSpectrum    DeviceTrait = "action.devices.traits.ColorSpectrum"
-	DeviceTraitColorTemperature DeviceTrait = "action.devices.traits.ColorTemperature"
-	DeviceTraitOnOff            DeviceTrait = "action.devices.traits.OnOff"
-	DeviceTraitStartStop        DeviceTrait = "action.devices.traits.StartStop"
-	DeviceTemperatureSettings   DeviceTrait = "action.devices.traits.TemperatureSettings"
-	DeviceTraitToggles          DeviceTrait = "action.devices.traits.Toggles"
-)
-
-type DeviceError string
-
-const (
-	DeviceErrorAuthExpired     DeviceError = "authExpired"
-	DeviceErrorAuthFailure     DeviceError = "authFailure"
-	DeviceErrorDeviceOffline   DeviceError = "deviceOffline"
-	DeviceErrorTimeout         DeviceError = "timeout"
-	DeviceErrorDeviceTurnedOff DeviceError = "deviceTurnedOff"
-	DeviceErrorDeviceNotFound  DeviceError = "deviceNotFound"
-	DeviceErrorValueOutofRange DeviceError = "valueOutOfRange"
-	DeviceErrorNotSupported    DeviceError = "notSupported"
-	DeviceErrorProtocolError   DeviceError = "protocolError"
-	DeviceErrorUnknownError    DeviceError = "unknownError"
-)
-
-type DeviceName struct {
-	DefaultNames []string `json:"defaultNames"`
-	Name         string   `json:"name"`
-	Nicknames    []string `json:"nicknames"`
+// Device represents a Smart Home Device with a Name, ID, and other metadata as defined by google [https://developers.google.com/assistant/smarthome/concepts/devices-traits]
+type Device interface {
+	DeviceId() string
+	DeviceName() proto.DeviceName
+	DeviceType() proto.DeviceType
+	DeviceTraits() []Trait
 }
 
-type DeviceInfo struct {
-	Manufacturer string `json:"manufacturer"`
-	Model        string `json:"model"`
-	HwVersion    string `json:"hwVersion"`
-	SwVersion    string `json:"swVersion"`
+// DeviceInfoProvider returns the metadata about a device.
+type DeviceInfoProvider interface {
+	DeviceInfo() proto.DeviceInfo
 }
 
-type Device struct {
-	Id              string        `json:"id"`
-	Type            DeviceType    `json:"type"`
-	Traits          []DeviceTrait `json:"traits"`
-	Name            DeviceName    `json:"name"`
-	WillReportState bool          `json:"willReportState"`
-	Attributes struct {
-	} `json:"attributes,omitempty"`
-	RoomHint   string                 `json:"roomHint,omitempty"`
-	DeviceInfo *DeviceInfo            `json:"deviceInfo,omitempty"`
-	CustomData map[string]interface{} `json:"customData,omitempty"`
+type DeviceRoomHintProvider interface {
+	DeviceRoomHint() string
 }
 
-func (b *Bridge) HandleExec(d Device, execFn ExecHandlerFunc) {
-	if b.Devices == nil {
-		b.Devices = make(map[string]*DeviceContext)
-	}
-	if _, ok := b.Devices[d.Id]; !ok {
-		b.Devices[d.Id] = new(DeviceContext)
-	}
-	b.Devices[d.Id].Device = d
-	b.Devices[d.Id].Exec = execFn
+// BasicDevice represents a simple Smart Home Device
+type BasicDevice struct {
+	Id       string
+	Name     proto.DeviceName
+	Type     proto.DeviceType
+	Traits   []Trait
+	Info     proto.DeviceInfo
+	RoomHint string
 }
 
-func (b *Bridge) HandleQuery(d Device, queryFn QueryHandlerFunc) {
-	if b.Devices == nil {
-		b.Devices = make(map[string]*DeviceContext)
-	}
-	if _, ok := b.Devices[d.Id]; !ok {
-		b.Devices[d.Id] = new(DeviceContext)
-	}
-	b.Devices[d.Id].Device = d
-	b.Devices[d.Id].Query = queryFn
+// DeviceRoomHint returns in which Room this device should probally be.
+func (d BasicDevice) DeviceRoomHint() string {
+	return d.RoomHint
+}
+
+// DeviceType returns which kind of device this is.
+func (d BasicDevice) DeviceType() proto.DeviceType {
+	return d.Type
+}
+
+// DeviceInfo returns Information about the device
+func (d BasicDevice) DeviceInfo() proto.DeviceInfo {
+	return d.Info
+}
+
+// DeviceId returns the Identifier of the device
+func (d BasicDevice) DeviceId() string {
+	return d.Id
+}
+
+// DeviceName returns the Name
+func (d BasicDevice) DeviceName() proto.DeviceName {
+	return d.Name
+}
+
+// DeviceTraits returns what functionality (trait) the device provides
+func (d BasicDevice) DeviceTraits() []Trait {
+	return d.Traits
 }

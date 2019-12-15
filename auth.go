@@ -1,9 +1,9 @@
 package gbridge
 
 import (
+	fmt "fmt"
 	"log"
 	"net/http"
-	fmt "fmt"
 )
 
 func (b *Bridge) HandleOauth(w http.ResponseWriter, r *http.Request) {
@@ -31,7 +31,6 @@ func (b *Bridge) HandleOauth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: check to see if theres a user in session otherwise redirect to login and generate an authCode
-	authCode = "1337"
 	if authCode != "" {
 		log.Println("Authcode successful:", authCode)
 		http.Redirect(w, r, fmt.Sprintf("%s?code=%s&state=%s", redirectUrl, authCode, state), http.StatusFound)
