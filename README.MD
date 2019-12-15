@@ -1,5 +1,8 @@
 # G Bridge
 ## Libary for Google Smart Home Actions
+[![GoDoc](https://godoc.org/github.com/pborges/gbridge?status.svg)](https://godoc.org/github.com/pborges/gbridge) [![Go Report Card](https://goreportcard.com/badge/github.com/pborges/gbridge)](https://goreportcard.com/report/github.com/pborges/gbridge) ![GitHub](https://img.shields.io/github/license/pborges/gbridge)
+
+
 **-- work in progress --** 
 
 Google smart home lets users control your connected devices through the Google Home app and the Google Assistant, which is available on more than 1 billion devices, like smart speakers, phones, cars, TVs, headphones, watches, and more. To connect your device with the Google Assistant, you need to build a smart home Action. Assistant handles how users trigger your Action (in multiple languages) and provides you with relevant metadata through Home Graph (such as a specific device based on user’s room); all you need to do is respond to the requests in your service.
@@ -71,9 +74,6 @@ This libary is ported from [actionssdk-smart-home-nodejs](https://github.com/act
 
 16. Select your project from the **Add New** section
 
-
-### GoDoc 
---- TODO: Link to GODOC ----
 
 ### Example
 Please see `/cmd/gbridge/` for examples on how to use this libary. 
