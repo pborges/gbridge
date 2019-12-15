@@ -1,13 +1,16 @@
 package gbridge
 
-import "github.com/pborges/gbridge/proto"
+import (
+	"github.com/pborges/gbridge/proto"
+	"github.com/pborges/gbridge/traits"
+)
 
 // Device represents a Smart Home Device with a Name, ID, and other metadata as defined by google [https://developers.google.com/assistant/smarthome/concepts/devices-traits]
 type Device interface {
 	DeviceId() string
 	DeviceName() proto.DeviceName
 	DeviceType() proto.DeviceType
-	DeviceTraits() []Trait
+	DeviceTraits() []traits.Trait
 }
 
 // DeviceInfoProvider returns the metadata about a device.
@@ -24,7 +27,7 @@ type BasicDevice struct {
 	Id       string
 	Name     proto.DeviceName
 	Type     proto.DeviceType
-	Traits   []Trait
+	Traits   []traits.Trait
 	Info     proto.DeviceInfo
 	RoomHint string
 }
@@ -34,7 +37,7 @@ func (d BasicDevice) DeviceRoomHint() string {
 	return d.RoomHint
 }
 
-// DeviceType returns which kind of device this is. 
+// DeviceType returns which kind of device this is.
 func (d BasicDevice) DeviceType() proto.DeviceType {
 	return d.Type
 }
@@ -55,6 +58,6 @@ func (d BasicDevice) DeviceName() proto.DeviceName {
 }
 
 // DeviceTraits returns what functionality (trait) the device provides
-func (d BasicDevice) DeviceTraits() []Trait {
+func (d BasicDevice) DeviceTraits() []traits.Trait {
 	return d.Traits
 }

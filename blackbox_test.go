@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/pborges/gbridge/proto"
+	"github.com/pborges/gbridge/traits"
 	"os"
 	"strings"
 	"testing"
@@ -18,9 +19,9 @@ func (l BasicLight) Type() proto.DeviceType {
 	return proto.DeviceTypeLight
 }
 
-func (l *BasicLight) DeviceTraits() []Trait {
-	return []Trait{
-		OnOffTrait{
+func (l *BasicLight) DeviceTraits() []traits.Trait {
+	return []traits.Trait{
+		traits.OnOffTrait{
 			CommandOnlyOnOff: false,
 			OnExecuteChange: func(ctx Context, state bool) proto.DeviceError {
 				if l.Id == "456" {
@@ -105,8 +106,8 @@ func TestSmartHome_encodeDeviceForSyncResponse(t *testing.T) {
 			Name: "test device",
 		},
 		Type: proto.DeviceTypeLight,
-		Traits: []Trait{
-			OnOffTrait{
+		Traits: []traits.Trait{
+			traits.OnOffTrait{
 				CommandOnlyOnOff: true,
 			},
 		},

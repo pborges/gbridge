@@ -1,7 +1,8 @@
-package gbridge
+package traits
 
 import (
 	"errors"
+	"github.com/pborges/gbridge"
 	"github.com/pborges/gbridge/proto"
 )
 
@@ -9,7 +10,7 @@ import (
 type OnOffTrait struct {
 	CommandOnlyOnOff bool
 	OnExecuteChange  OnOffCommand
-	OnStateHandler   func(Context) (bool, proto.ErrorCode)
+	OnStateHandler   func(gbridge.Context) (bool, proto.ErrorCode)
 }
 
 func (t OnOffTrait) ValidateTrait() error {
@@ -26,20 +27,20 @@ func (t OnOffTrait) TraitName() string {
 	return "action.devices.traits.OnOff"
 }
 
-func (t OnOffTrait) TraitStates(ctx Context) []State {
-	var onOffState State
+func (t OnOffTrait) TraitStates(ctx gbridge.Context) []gbridge.State {
+	var onOffState gbridge.State
 	onOffState.Name = "on"
 	onOffState.Value, onOffState.Error = t.OnStateHandler(ctx)
 
-	return []State{onOffState}
+	return []gbridge.State{onOffState}
 }
 
 func (t OnOffTrait) TraitCommands() []Command {
 	return []Command{t.OnExecuteChange}
 }
 
-func (t OnOffTrait) TraitAttributes() []Attribute {
-	return []Attribute{
+func (t OnOffTrait) TraitAttributes() []gbridge.Attribute {
+	return []gbridge.Attribute{
 		{
 			Name:  "commandOnlyOnOff",
 			Value: t.CommandOnlyOnOff,

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/pborges/gbridge/traits"
 	"log"
 	"net/http"
 
@@ -121,11 +122,11 @@ func main() {
 	if dbExists, err := authProvider.Init("db.json"); err != nil {
 		log.Fatal(err)
 	} else if !dbExists {
-    // register O-Auth clients with clientID and clientSecret 
+		// register O-Auth clients with clientID and clientSecret
 		if err := authProvider.RegisterClient("123456", "654321"); err != nil {
 			log.Fatal(err)
 		}
-    // register agentUserIds, these are the credentials you give to the login page
+		// register agentUserIds, these are the credentials you give to the login page
 		if err := authProvider.RegisterAgent("pborges", "test"); err != nil {
 			log.Fatal(err)
 		}
@@ -152,15 +153,15 @@ func main() {
 		},
 	}
 
-  // register device
+	// register device
 	if err := smartHome.RegisterDevice("pborges", gbridge.BasicDevice{
 		Id: "1234567890",
 		Name: proto.DeviceName{
 			Name: "Light 1",
 		},
 		Type: proto.DeviceTypeLight,
-		Traits: []gbridge.Trait{
-			gbridge.OnOffTrait{
+		Traits: []traits.Trait{
+			traits.OnOffTrait{
 				CommandOnlyOnOff: false,
 				OnExecuteChange: func(ctx gbridge.Context, state bool) proto.DeviceError {
 					// Here you should handle how your device is turned on or off.
@@ -187,21 +188,21 @@ func main() {
 			Name: "Complicated Blinds",
 		},
 		Type: proto.DeviceTypeBlinds,
-		Traits: []gbridge.Trait{
-			gbridge.MultiDirectionOpenCloseTrait{
+		Traits: []traits.Trait{
+			traits.MultiDirectionOpenCloseTrait{
 				DiscreteOnlyOpenClose: false,
-				OpenDirection:         []gbridge.OpenCloseTraitDirection{gbridge.OpenCloseTraitDirectionUp, gbridge.OpenCloseTraitDirectionDown},
+				OpenDirection:         []traits.OpenCloseTraitDirection{traits.OpenCloseTraitDirectionUp, traits.OpenCloseTraitDirectionDown},
 				QueryOnlyOpenClose:    false,
-				OnExecuteChange: func(ctx gbridge.Context, openPercent float64, openDirection gbridge.OpenCloseTraitDirection) proto.DeviceError {
+				OnExecuteChange: func(ctx gbridge.Context, openPercent float64, openDirection traits.OpenCloseTraitDirection) proto.DeviceError {
 					// Here you can handle how your device is actually set to different openPercent values
 					log.Println("Percent of", ctx.Target.DeviceName(), "should be set to", openPercent)
 					return nil
 				},
-				OnStateHandler: func(ctx gbridge.Context) ([]gbridge.OpenState, proto.ErrorCode) {
+				OnStateHandler: func(ctx gbridge.Context) ([]traits.OpenState, proto.ErrorCode) {
 					// Here you should return your device state
 					log.Println("query state of", ctx.Target.DeviceName())
-					curOpenState := gbridge.OpenState{OpenPercent: 100.0, OpenDirection: gbridge.OpenCloseTraitDirectionUp}
-					return []gbridge.OpenState{curOpenState}, nil
+					curOpenState := traits.OpenState{OpenPercent: 100.0, OpenDirection: traits.OpenCloseTraitDirectionUp}
+					return []traits.OpenState{curOpenState}, nil
 				},
 			}},
 		Info: proto.DeviceInfo{
@@ -218,8 +219,8 @@ func main() {
 			Name: "Simple Blinds",
 		},
 		Type: proto.DeviceTypeBlinds,
-		Traits: []gbridge.Trait{
-			gbridge.OpenCloseTrait{
+		Traits: []traits.Trait{
+			traits.OpenCloseTrait{
 				DiscreteOnlyOpenClose: true,
 				QueryOnlyOpenClose:    false,
 				OnExecuteChange: func(ctx gbridge.Context, openPercent float64) proto.DeviceError {
