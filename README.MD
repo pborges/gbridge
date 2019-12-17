@@ -1,5 +1,6 @@
+![gBridge_banner](https://user-images.githubusercontent.com/28186014/71015708-5d70bd00-20f4-11ea-88a8-976b19ccbd7f.png)
+
 # G Bridge
-## Libary for Google Smart Home Actions
 [![GoDoc](https://godoc.org/github.com/pborges/gbridge?status.svg)](https://godoc.org/github.com/pborges/gbridge) [![Go Report Card](https://goreportcard.com/badge/github.com/pborges/gbridge)](https://goreportcard.com/report/github.com/pborges/gbridge) ![GitHub](https://img.shields.io/github/license/pborges/gbridge)
 
 
