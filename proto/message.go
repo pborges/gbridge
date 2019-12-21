@@ -22,6 +22,12 @@ type SyncResponse struct {
 	Devices     []Device `json:"devices"`
 }
 
+type QueryRequest struct {
+	Devices []struct {
+		ID string `json:"id"`
+	} `json:"devices"`
+}
+
 type QueryResponse struct {
 	Devices map[string]map[string]interface{} `json:"devices"`
 }

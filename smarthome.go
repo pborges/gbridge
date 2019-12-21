@@ -48,7 +48,15 @@ func (s *SmartHome) decodeAndHandle(agentUserId string, r io.Reader) proto.Inten
 				}
 			}
 		case "action.devices.QUERY":
-			res.Payload = s.handleQueryIntent(agentUserId)
+			requestBody := proto.QueryRequest{}
+			if err := json.Unmarshal(i.Payload, &requestBody); err == nil {
+				res.Payload = s.handleQueryIntent(requestBody)
+			} else {
+				res.Payload = proto.ErrorResponse{
+					Status:    proto.CommandStatusError,
+					ErrorCode: proto.ErrorCodeProtocolError.Error(),
+				}
+			}
 		}
 	}
 	return res
@@ -219,13 +227,14 @@ func (s *SmartHome) RegisterDevice(agentUserId string, dev Device) error {
 	return nil
 }
 
-func (s *SmartHome) handleQueryIntent(agentUserId string) proto.QueryResponse {
-	log.Printf("[%s] QUERY\n", agentUserId)
+func (s *SmartHome) handleQueryIntent(body proto.QueryRequest) proto.QueryResponse {
+	log.Printf("QUERY %+v\n", body)
 	res := proto.QueryResponse{
 		Devices: make(map[string]map[string]interface{}),
 	}
-	if agent, ok := s.agents[agentUserId]; ok {
-		for _, d := range agent.Devices {
+	for _, r := range body.Devices {
+		for _, a := range s.agents {
+			d := a.Devices[r.ID]
 			ctx := Context{Target: d}
 			if _, ok := res.Devices[d.DeviceId()]; !ok {
 				res.Devices[d.DeviceId()] = make(map[string]interface{})

@@ -151,6 +151,16 @@ func TestStatesResponse(t *testing.T) {
 		},
 	})
 
+	home.RegisterDevice("test", &BasicLight{
+		BasicDevice: BasicDevice{
+			Id: "123",
+			Name: proto.DeviceName{
+				Name: "Light3",
+			},
+		},
+		State: true,
+	})
+
 	res := home.decodeAndHandle("test",
 		strings.NewReader(`{
 		  "requestId": "ff36a3cc-ec34-11e6-b1a0-64510650abcf",
@@ -171,7 +181,7 @@ func TestStatesResponse(t *testing.T) {
 	buf := bytes.NewBufferString("")
 	json.NewEncoder(buf).Encode(res)
 
-	if strings.TrimSpace(buf.String()) != `{"requestId":"ff36a3cc-ec34-11e6-b1a0-64510650abcf","payload":{"devices":{"123":{"on":true,"online":true},"456":{"on":false,"online":true}}}}` {
+	if strings.TrimSpace(buf.String()) != `{"requestId":"ff36a3cc-ec34-11e6-b1a0-64510650abcf","payload":{"devices":{"123":{"on":true,"online":true}}}}` {
 		t.Error("unexpected response got ", buf.String())
 	}
 }
