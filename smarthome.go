@@ -48,7 +48,7 @@ func (s *SmartHome) decodeAndHandle(agentUserId string, r io.Reader) proto.Inten
 				}
 			}
 		case "action.devices.QUERY":
-			//todo handle query
+			res.Payload = s.handleQueryIntent(agentUserId)
 		}
 	}
 	return res
@@ -217,6 +217,36 @@ func (s *SmartHome) RegisterDevice(agentUserId string, dev Device) error {
 	}
 
 	return nil
+}
+
+func (s *SmartHome) handleQueryIntent(agentUserId string) proto.QueryResponse {
+	log.Printf("[%s] QUERY\n", agentUserId)
+	res := proto.QueryResponse{
+		Devices: make(map[string]map[string]interface{}),
+	}
+	if agent, ok := s.agents[agentUserId]; ok {
+		for _, d := range agent.Devices {
+			ctx := Context{Target: d}
+			if _, ok := res.Devices[d.DeviceId()]; !ok {
+				res.Devices[d.DeviceId()] = make(map[string]interface{})
+			}
+			for _, t := range d.DeviceTraits() {
+				for _, s := range t.TraitStates(ctx) {
+					res.Devices[d.DeviceId()][s.Name] = s.Value
+					res.Devices[d.DeviceId()]["online"] = s.Error == nil
+					if _, ok := res.Devices[d.DeviceId()]["status"]; ok &&
+						res.Devices[d.DeviceId()]["status"] == proto.CommandStatusError {
+						if s.Error != nil {
+							res.Devices[d.DeviceId()]["status"] = proto.CommandStatusError
+							res.Devices[d.DeviceId()]["errorCode"] = s.Error
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return res
 }
 
 type agentContext struct {

@@ -22,6 +22,10 @@ type SyncResponse struct {
 	Devices     []Device `json:"devices"`
 }
 
+type QueryResponse struct {
+	Devices map[string]map[string]interface{} `json:"devices"`
+}
+
 type ExecRequest struct {
 	Commands []struct {
 		Devices []struct {
@@ -42,12 +46,12 @@ type CommandRequest struct {
 
 type ErrorResponse struct {
 	Status    CommandStatus `json:"status"`
-	ErrorCode string     `json:"errorCode,omitempty"`
+	ErrorCode string        `json:"errorCode,omitempty"`
 }
 
 type CommandResponse struct {
 	Ids       []string               `json:"ids"`
 	States    map[string]interface{} `json:"states"`
 	Status    CommandStatus          `json:"status"`
-	ErrorCode string              `json:"errorCode,omitempty"`
+	ErrorCode string                 `json:"errorCode,omitempty"`
 }

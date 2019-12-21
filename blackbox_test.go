@@ -129,3 +129,49 @@ func TestSmartHome_encodeDeviceForSyncResponse(t *testing.T) {
 		t.Error("missing attribute commandOnlyOnOff")
 	}
 }
+
+func TestStatesResponse(t *testing.T) {
+	home := SmartHome{}
+	home.RegisterDevice("test", &BasicLight{
+		BasicDevice: BasicDevice{
+			Id: "123",
+			Name: proto.DeviceName{
+				Name: "Light1",
+			},
+		},
+		State: true,
+	})
+
+	home.RegisterDevice("test", &BasicLight{
+		BasicDevice: BasicDevice{
+			Id: "456",
+			Name: proto.DeviceName{
+				Name: "Light2",
+			},
+		},
+	})
+
+	res := home.decodeAndHandle("test",
+		strings.NewReader(`{
+		  "requestId": "ff36a3cc-ec34-11e6-b1a0-64510650abcf",
+		  "inputs": [{
+			"intent": "action.devices.QUERY",
+			"payload": {
+			  "devices": [{
+				"id": "123",
+				"customData": {
+				  "fooValue": 74,
+				  "barValue": true,
+				  "bazValue": "foo"
+				}
+			  }]
+			}
+		  }]
+		}`))
+	buf := bytes.NewBufferString("")
+	json.NewEncoder(buf).Encode(res)
+
+	if strings.TrimSpace(buf.String()) != `{"requestId":"ff36a3cc-ec34-11e6-b1a0-64510650abcf","payload":{"devices":{"123":{"on":true,"online":true},"456":{"on":false,"online":true}}}}` {
+		t.Error("unexpected response got ", buf.String())
+	}
+}
