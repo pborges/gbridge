@@ -161,6 +161,16 @@ func TestStatesResponse(t *testing.T) {
 		State: true,
 	})
 
+	home.RegisterDevice("test2", &BasicLight{
+		BasicDevice: BasicDevice{
+			Id: "1235",
+			Name: proto.DeviceName{
+				Name: "Light5",
+			},
+		},
+		State: true,
+	})
+
 	res := home.decodeAndHandle("test",
 		strings.NewReader(`{
 		  "requestId": "ff36a3cc-ec34-11e6-b1a0-64510650abcf",

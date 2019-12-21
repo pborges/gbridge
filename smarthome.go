@@ -227,27 +227,29 @@ func (s *SmartHome) RegisterDevice(agentUserId string, dev Device) error {
 	return nil
 }
 
-func (s *SmartHome) handleQueryIntent(body proto.QueryRequest) proto.QueryResponse {
-	log.Printf("QUERY %+v\n", body)
+func (s *SmartHome) handleQueryIntent(request proto.QueryRequest) proto.QueryResponse {
+	log.Printf("QUERY %+v\n", request)
 	res := proto.QueryResponse{
 		Devices: make(map[string]map[string]interface{}),
 	}
-	for _, r := range body.Devices {
+	for _, r := range request.Devices {
+		// look through all the agents for the requested device
 		for _, a := range s.agents {
-			d := a.Devices[r.ID]
-			ctx := Context{Target: d}
-			if _, ok := res.Devices[d.DeviceId()]; !ok {
-				res.Devices[d.DeviceId()] = make(map[string]interface{})
-			}
-			for _, t := range d.DeviceTraits() {
-				for _, s := range t.TraitStates(ctx) {
-					res.Devices[d.DeviceId()][s.Name] = s.Value
-					res.Devices[d.DeviceId()]["online"] = s.Error == nil
-					if _, ok := res.Devices[d.DeviceId()]["status"]; ok &&
-						res.Devices[d.DeviceId()]["status"] == proto.CommandStatusError {
-						if s.Error != nil {
-							res.Devices[d.DeviceId()]["status"] = proto.CommandStatusError
-							res.Devices[d.DeviceId()]["errorCode"] = s.Error
+			if d, ok := a.Devices[r.ID]; ok {
+				if _, ok := res.Devices[r.ID]; !ok {
+					res.Devices[r.ID] = make(map[string]interface{})
+				}
+				ctx := Context{Target: d}
+				for _, t := range d.DeviceTraits() {
+					for _, s := range t.TraitStates(ctx) {
+						res.Devices[d.DeviceId()][s.Name] = s.Value
+						res.Devices[d.DeviceId()]["online"] = s.Error == nil
+						if _, ok := res.Devices[d.DeviceId()]["status"]; ok &&
+							res.Devices[d.DeviceId()]["status"] == proto.CommandStatusError {
+							if s.Error != nil {
+								res.Devices[d.DeviceId()]["status"] = proto.CommandStatusError
+								res.Devices[d.DeviceId()]["errorCode"] = s.Error
+							}
 						}
 					}
 				}
