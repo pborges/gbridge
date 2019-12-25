@@ -14,6 +14,7 @@ import (
 //todo: naive concurrency scheme, this should be looked at and redone
 
 type SmartHome struct {
+	Log    *log.Logger
 	agents map[string]agentContext
 	lock   sync.RWMutex
 }
@@ -22,7 +23,9 @@ func (s *SmartHome) decodeAndHandle(agentUserId string, r io.Reader) proto.Inten
 	req := proto.IntentMessageRequest{}
 
 	if err := json.NewDecoder(r).Decode(&req); err != nil {
-		log.Println("error decoding request:", err)
+		if s.Log != nil {
+			s.Log.Println("error decoding request:", err)
+		}
 	}
 
 	res := proto.IntentMessageResponse{
@@ -33,7 +36,6 @@ func (s *SmartHome) decodeAndHandle(agentUserId string, r io.Reader) proto.Inten
 	defer s.lock.RUnlock()
 
 	for _, i := range req.Inputs {
-		log.Printf("[%s] Intent: %s-> %s\n", agentUserId, i.Intent, string(i.Payload))
 		switch i.Intent {
 		case "action.devices.SYNC":
 			res.Payload = s.handleSyncIntent(agentUserId)
@@ -67,15 +69,59 @@ func (s *SmartHome) Handle() http.HandlerFunc {
 		defer r.Body.Close()
 
 		res := s.decodeAndHandle(oauth.GetAgentUserIdFromHeader(r), r.Body)
-		if err := json.NewEncoder(io.MultiWriter(w, log.Writer())).Encode(res); err != nil {
-			log.Println("error encoding response:", err)
+		if err := json.NewEncoder(w).Encode(res); err != nil {
+			if s.Log != nil {
+				s.Log.Println("error encoding response:", err)
+			}
 			http.Error(w, "error encoding response: "+err.Error(), http.StatusInternalServerError)
 		}
 	}
 }
 
+func (s *SmartHome) executeCommandForResponse(id string, dev Device, ex proto.CommandRequest) proto.CommandResponse {
+	response := proto.CommandResponse{
+		Ids:       []string{id},
+		ErrorCode: proto.ErrorCodeNotSupported.Error(),
+		States:    make(map[string]interface{}),
+	}
+	response.States["online"] = true
+
+	// check all traits...
+	for _, trait := range dev.DeviceTraits() {
+		// for all the commands...
+		for _, cmd := range trait.TraitCommands() {
+			// for the right command
+			if ex.Command == cmd.Name() {
+				// and execute
+				ctx := Context{Target: dev}
+				if err := cmd.Execute(ctx, ex.Params); err == nil {
+					response.ErrorCode = ""
+					for _, s := range trait.TraitStates(ctx) {
+						if s.Error == nil {
+							response.Status = proto.CommandStatusSuccess
+							response.States[s.Name] = s.Value
+						} else {
+							response.Status = proto.CommandStatusError
+							response.ErrorCode = s.Error.Error()
+							response.States["online"] = false
+							break
+						}
+					}
+				} else {
+					response.Status = proto.CommandStatusError
+					response.ErrorCode = err.Error()
+				}
+			}
+		}
+	}
+	return response
+}
+
 func (s *SmartHome) handleExecuteIntent(agentUserId string, req proto.ExecRequest) proto.ExecResponse {
-	log.Printf("[%s] EXEC: %+v\n", agentUserId, req)
+	if s.Log != nil {
+		o, _ := json.Marshal(req)
+		s.Log.Printf("[%s] EXEC REQUEST: %s\n", agentUserId, string(o))
+	}
 
 	var ids []string
 	for _, c := range req.Commands {
@@ -84,55 +130,36 @@ func (s *SmartHome) handleExecuteIntent(agentUserId string, req proto.ExecReques
 		}
 	}
 	responseBody := proto.ExecResponse{}
-	// for each command
+	responses := make(chan proto.CommandResponse)
+	resCount := 0
+	// for the correct agent
 	if agent, ok := s.agents[agentUserId]; ok {
+		// for each command
 		for _, c := range req.Commands {
 			// for each device
 			for _, d := range c.Devices {
 				if devCtx, ok := agent.Devices[d.ID]; ok {
 					// execute all the things
 					for _, e := range c.Execution {
-						r := proto.CommandResponse{
-							Ids:       ids,
-							ErrorCode: proto.ErrorCodeNotSupported.Error(),
-							States:    make(map[string]interface{}),
-						}
-						r.States["online"] = true
-
-						// check all traits...
-						for _, trait := range devCtx.DeviceTraits() {
-							// for all the commands...
-							for _, cmd := range trait.TraitCommands() {
-								// for the right command
-								if e.Command == cmd.Name() {
-									// and execute
-									ctx := Context{Target: devCtx}
-									if err := cmd.Execute(ctx, e.Params); err == nil {
-										r.ErrorCode = ""
-										for _, s := range trait.TraitStates(ctx) {
-											if s.Error == nil {
-												r.Status = proto.CommandStatusSuccess
-												r.States[s.Name] = s.Value
-											} else {
-												r.Status = proto.CommandStatusError
-												r.ErrorCode = s.Error.Error()
-												r.States["online"] = false
-												break
-											}
-										}
-									} else {
-										r.Status = proto.CommandStatusError
-										r.ErrorCode = err.Error()
-									}
-								}
-							}
-						}
-						responseBody.Commands = append(responseBody.Commands, r)
+						resCount++
+						go func(s *SmartHome, ch chan proto.CommandResponse, id string, dev Device, ex proto.CommandRequest) {
+							ch <- s.executeCommandForResponse(id, dev, ex)
+						}(s, responses, d.ID, devCtx, e)
 					}
 				}
 			}
 		}
 	}
+
+	for len(responseBody.Commands) < resCount {
+		responseBody.Commands = append(responseBody.Commands, <-responses)
+	}
+
+	if s.Log != nil {
+		o, _ := json.Marshal(responseBody)
+		s.Log.Printf("[%s] EXEC RESPONSE: %s\n", agentUserId, string(o))
+	}
+
 	return responseBody
 }
 
@@ -176,7 +203,9 @@ func (s *SmartHome) encodeDeviceForSyncResponse(dev Device) proto.Device {
 }
 
 func (s *SmartHome) handleSyncIntent(agentUserId string) proto.SyncResponse {
-	log.Printf("[%s] SYNC\n", agentUserId)
+	if s.Log != nil {
+		s.Log.Printf("[%s] SYNC REQUEST\n", agentUserId)
+	}
 
 	devices := make([]proto.Device, 0)
 	if agent, ok := s.agents[agentUserId]; ok {
@@ -185,10 +214,15 @@ func (s *SmartHome) handleSyncIntent(agentUserId string) proto.SyncResponse {
 		}
 	}
 
-	return proto.SyncResponse{
+	response := proto.SyncResponse{
 		AgentUserId: agentUserId,
 		Devices:     devices,
 	}
+	if s.Log != nil {
+		o, _ := json.Marshal(response)
+		s.Log.Printf("[%s] SYNC RESPONSE: %s\n", agentUserId, string(o))
+	}
+	return response
 }
 
 func (s *SmartHome) RegisterDevice(agentUserId string, dev Device) error {
@@ -228,7 +262,10 @@ func (s *SmartHome) RegisterDevice(agentUserId string, dev Device) error {
 }
 
 func (s *SmartHome) handleQueryIntent(request proto.QueryRequest) proto.QueryResponse {
-	log.Printf("QUERY %+v\n", request)
+	if s.Log != nil {
+		o, _ := json.Marshal(request)
+		s.Log.Printf("QUERY REQUEST %s\n", string(o))
+	}
 	res := proto.QueryResponse{
 		Devices: make(map[string]map[string]interface{}),
 	}
@@ -256,7 +293,10 @@ func (s *SmartHome) handleQueryIntent(request proto.QueryRequest) proto.QueryRes
 			}
 		}
 	}
-
+	if s.Log != nil {
+		o, _ := json.Marshal(res)
+		s.Log.Printf("QUERY RESPONSE %s\n", string(o))
+	}
 	return res
 }
 
