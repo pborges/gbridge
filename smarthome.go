@@ -146,6 +146,13 @@ func (s *SmartHome) handleExecuteIntent(agentUserId string, req proto.ExecReques
 							ch <- s.executeCommandForResponse(id, dev, ex)
 						}(s, responses, d.ID, devCtx, e)
 					}
+				} else {
+					responseBody.Commands = append(responseBody.Commands, proto.CommandResponse{
+						Ids:       []string{d.ID},
+						States:    map[string]interface{}{},
+						Status:    proto.CommandStatusError,
+						ErrorCode: proto.ErrorCodeDeviceNotFound.Error(),
+					})
 				}
 			}
 		}
