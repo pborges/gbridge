@@ -56,8 +56,8 @@ type ErrorResponse struct {
 }
 
 type CommandResponse struct {
-	Ids       []string               `json:"ids"`
-	States    map[string]interface{} `json:"states"`
-	Status    CommandStatus          `json:"status"`
-	ErrorCode string                 `json:"errorCode,omitempty"`
+	Ids []string `json:"ids"`
+	//States    map[string]interface{} `json:"states"`
+	Status    CommandStatus `json:"status"`
+	ErrorCode string        `json:"errorCode,omitempty"`
 }
