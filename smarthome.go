@@ -82,9 +82,9 @@ func (s *SmartHome) executeCommandForResponse(id string, dev Device, ex proto.Co
 	response := proto.CommandResponse{
 		Ids:       []string{id},
 		ErrorCode: proto.ErrorCodeNotSupported.Error(),
-		States:    make(map[string]interface{}),
+		//States:    make(map[string]interface{}),
 	}
-	response.States["online"] = true
+	// response.States["online"] = true
 
 	// check all traits...
 	for _, trait := range dev.DeviceTraits() {
@@ -96,17 +96,22 @@ func (s *SmartHome) executeCommandForResponse(id string, dev Device, ex proto.Co
 				ctx := Context{Target: dev}
 				if err := cmd.Execute(ctx, ex.Params); err == nil {
 					response.ErrorCode = ""
-					for _, s := range trait.TraitStates(ctx) {
-						if s.Error == nil {
-							response.Status = proto.CommandStatusSuccess
-							response.States[s.Name] = s.Value
-						} else {
-							response.Status = proto.CommandStatusError
-							response.ErrorCode = s.Error.Error()
-							response.States["online"] = false
-							break
+					// States are optional in this response
+					// Lets not do them to save time
+					// Google will query the devices anyways
+					/*
+						for _, s := range trait.TraitStates(ctx) {
+							if s.Error == nil {
+								response.Status = proto.CommandStatusSuccess
+								response.States[s.Name] = s.Value
+							} else {
+								response.Status = proto.CommandStatusError
+								response.ErrorCode = s.Error.Error()
+								response.States["online"] = false
+								break
+							}
 						}
-					}
+					*/
 				} else {
 					response.Status = proto.CommandStatusError
 					response.ErrorCode = err.Error()
@@ -148,8 +153,8 @@ func (s *SmartHome) handleExecuteIntent(agentUserId string, req proto.ExecReques
 					}
 				} else {
 					responseBody.Commands = append(responseBody.Commands, proto.CommandResponse{
-						Ids:       []string{d.ID},
-						States:    map[string]interface{}{},
+						Ids: []string{d.ID},
+						//States:    map[string]interface{}{},
 						Status:    proto.CommandStatusError,
 						ErrorCode: proto.ErrorCodeDeviceNotFound.Error(),
 					})

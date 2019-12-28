@@ -92,8 +92,8 @@ func TestMultipleExecution(t *testing.T) {
 	json.NewEncoder(buf).Encode(res)
 
 	// due to the nature of concurrency we may get the command responses in different orders
-	if strings.TrimSpace(buf.String()) != `{"requestId":"ff36a3cc-ec34-11e6-b1a0-64510650abcf","payload":{"commands":[{"ids":["456"],"states":{"online":true},"status":"ERROR","errorCode":"turnedOff"},{"ids":["123"],"states":{"on":true,"online":true},"status":"SUCCESS"}]}}` &&
-		strings.TrimSpace(buf.String()) != `{"requestId":"ff36a3cc-ec34-11e6-b1a0-64510650abcf","payload":{"commands":[{"ids":["123"],"states":{"on":true,"online":true},"status":"SUCCESS"},{"ids":["456"],"states":{"online":true},"status":"ERROR","errorCode":"turnedOff"}]}}` {
+	if strings.TrimSpace(buf.String()) != `{"requestId":"ff36a3cc-ec34-11e6-b1a0-64510650abcf","payload":{"commands":[{"ids":["456"],"status":"ERROR","errorCode":"turnedOff"},{"ids":["123"],"status":""}]}}` &&
+		strings.TrimSpace(buf.String()) != `{"requestId":"ff36a3cc-ec34-11e6-b1a0-64510650abcf","payload":{"commands":[{"ids":["123"],"status":""},{"ids":["456"],"status":"ERROR","errorCode":"turnedOff"}]}}` {
 		t.Error("unexpected response got", strings.TrimSpace(buf.String()))
 	}
 }
