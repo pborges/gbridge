@@ -95,7 +95,9 @@ func (s *SmartHome) executeCommandForResponse(id string, dev Device, ex proto.Co
 				// and execute
 				ctx := Context{Target: dev}
 				if err := cmd.Execute(ctx, ex.Params); err == nil {
+					response.Status = proto.CommandStatusSuccess
 					response.ErrorCode = ""
+
 					// States are optional in this response
 					// Lets not do them to save time
 					// Google will query the devices anyways
