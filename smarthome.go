@@ -136,9 +136,10 @@ func (s *SmartHome) handleExecuteIntent(agentUserId string, req proto.ExecReques
 			ids = append(ids, d.ID)
 		}
 	}
-	responseBody := proto.ExecResponse{}
+
+	var resCount int
+	var responseBody proto.ExecResponse
 	responses := make(chan proto.CommandResponse)
-	resCount := 0
 	// for the correct agent
 	if agent, ok := s.agents[agentUserId]; ok {
 		// for each command
@@ -221,17 +222,17 @@ func (s *SmartHome) handleSyncIntent(agentUserId string) proto.SyncResponse {
 		s.Log.Printf("[%s] SYNC REQUEST\n", agentUserId)
 	}
 
-	devices := make([]proto.Device, 0)
+	response := proto.SyncResponse{
+		AgentUserId: agentUserId,
+		Devices:     make([]proto.Device, 0),
+	}
+
 	if agent, ok := s.agents[agentUserId]; ok {
 		for _, d := range agent.Devices {
-			devices = append(devices, s.encodeDeviceForSyncResponse(d))
+			response.Devices = append(response.Devices, s.encodeDeviceForSyncResponse(d))
 		}
 	}
 
-	response := proto.SyncResponse{
-		AgentUserId: agentUserId,
-		Devices:     devices,
-	}
 	if s.Log != nil {
 		o, _ := json.Marshal(response)
 		s.Log.Printf("[%s] SYNC RESPONSE: %s\n", agentUserId, string(o))
