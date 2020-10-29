@@ -78,13 +78,7 @@ func (s *SmartHome) Handle() http.HandlerFunc {
 	}
 }
 
-func (s *SmartHome) executeCommandForResponse(id string, dev Device, ex proto.CommandRequest) proto.CommandResponse {
-	response := proto.CommandResponse{
-		Ids:       []string{id},
-		ErrorCode: proto.ErrorCodeNotSupported.Error(),
-		//States:    make(map[string]interface{}),
-	}
-	// response.States["online"] = true
+func (s *SmartHome) executeCommandForResponse(dev Device, ex proto.CommandRequest) proto.CommandResponse {
 
 	// check all traits...
 	for _, trait := range dev.DeviceTraits() {
@@ -94,34 +88,15 @@ func (s *SmartHome) executeCommandForResponse(id string, dev Device, ex proto.Co
 			if ex.Command == cmd.Name() {
 				// and execute
 				ctx := Context{Target: dev}
-				if err := cmd.Execute(ctx, ex.Params); err == nil {
-					response.Status = proto.CommandStatusSuccess
-					response.ErrorCode = ""
-
-					// States are optional in this response
-					// Lets not do them to save time
-					// Google will query the devices anyways
-					/*
-						for _, s := range trait.TraitStates(ctx) {
-							if s.Error == nil {
-								response.Status = proto.CommandStatusSuccess
-								response.States[s.Name] = s.Value
-							} else {
-								response.Status = proto.CommandStatusError
-								response.ErrorCode = s.Error.Error()
-								response.States["online"] = false
-								break
-							}
-						}
-					*/
-				} else {
-					response.Status = proto.CommandStatusError
-					response.ErrorCode = err.Error()
-				}
+				res := cmd.Execute(ctx, ex.Params)
+				proto.SetIds(&res, dev.DeviceId())
+				return res
 			}
 		}
 	}
-	return response
+	return proto.CommandResponse{
+		ErrorCode: proto.ErrorCodeNotSupported,
+	}
 }
 
 func (s *SmartHome) handleExecuteIntent(agentUserId string, req proto.ExecRequest) proto.ExecResponse {
@@ -150,16 +125,13 @@ func (s *SmartHome) handleExecuteIntent(agentUserId string, req proto.ExecReques
 					// execute all the things
 					for _, e := range c.Execution {
 						resCount++
-						go func(s *SmartHome, ch chan proto.CommandResponse, id string, dev Device, ex proto.CommandRequest) {
-							ch <- s.executeCommandForResponse(id, dev, ex)
-						}(s, responses, d.ID, devCtx, e)
+						go func(s *SmartHome, ch chan proto.CommandResponse, dev Device, ex proto.CommandRequest) {
+							ch <- s.executeCommandForResponse(dev, ex)
+						}(s, responses, devCtx, e)
 					}
 				} else {
 					responseBody.Commands = append(responseBody.Commands, proto.CommandResponse{
-						Ids: []string{d.ID},
-						//States:    map[string]interface{}{},
-						Status:    proto.CommandStatusError,
-						ErrorCode: proto.ErrorCodeDeviceNotFound.Error(),
+						ErrorCode: proto.ErrorCodeDeviceNotFound,
 					})
 				}
 			}

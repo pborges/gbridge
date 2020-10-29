@@ -8,14 +8,18 @@ import (
 type OnOffCommand func(ctx Context, state bool) proto.DeviceError
 
 // Execute checks if the arguments from the Intent Request are correct and passes them to a user-defined type safe execute handler
-func (t OnOffCommand) Execute(ctx Context, args map[string]interface{}) proto.DeviceError {
+func (t OnOffCommand) Execute(ctx Context, args map[string]interface{}) proto.CommandResponse {
+	res := proto.CommandResponse{
+		Results: map[string]interface{}{},
+	}
 	if val, ok := args["on"]; ok {
 		if state, ok := val.(bool); ok {
-			return t(ctx, state)
+			res.ErrorCode = t(ctx, state)
+		} else {
+			res.ErrorCode = proto.ErrorCodeNotSupported
 		}
-		return proto.ErrorCodeNotSupported
 	}
-	return proto.ErrorCodeProtocolError
+	return res
 }
 
 // Name returns the Identifier String of the Command

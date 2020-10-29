@@ -8,15 +8,19 @@ import (
 type OpenCloseCommand func(ctx Context, openPercent float64) proto.DeviceError
 
 // Execute checks if the arguments from the Intent Request are correct and passes them to a user-defined type safe execute handler
-func (t OpenCloseCommand) Execute(ctx Context, args map[string]interface{}) proto.DeviceError {
+func (t OpenCloseCommand) Execute(ctx Context, args map[string]interface{}) proto.CommandResponse {
+	res := proto.CommandResponse{
+		ErrorCode: proto.ErrorCodeProtocolError,
+	}
 	// validate if our EXECUTE Request contains the "openPercent" object so the handler can actually handle something
 	if argOpenPercent, ok := args["openPercent"]; ok {
 		if openPercent, ok := argOpenPercent.(float64); ok {
-			return t(ctx, openPercent)
+			res.ErrorCode = t(ctx, openPercent)
+		} else {
+			res.ErrorCode = proto.ErrorCodeNotSupported
 		}
-		return proto.ErrorCodeNotSupported
 	}
-	return proto.ErrorCodeProtocolError
+	return res
 }
 
 // Name returns the intent for this Trait
@@ -28,7 +32,10 @@ func (t OpenCloseCommand) Name() string {
 type DirectionalOpenCloseCommand func(ctx Context, openPercent float64, openDirection OpenCloseTraitDirection) proto.DeviceError
 
 // Execute validates the request and calls the user defined handler for the device trait
-func (t DirectionalOpenCloseCommand) Execute(ctx Context, args map[string]interface{}) proto.DeviceError {
+func (t DirectionalOpenCloseCommand) Execute(ctx Context, args map[string]interface{}) proto.CommandResponse {
+	res := proto.CommandResponse{
+		ErrorCode: proto.ErrorCodeProtocolError,
+	}
 	// validate if our EXECUTE Request contains the "openPercent" object so the handler can actually handle something
 	openDirection := OpenCloseTraitDirectionNone
 	if argOpenPercent, ok := args["openPercent"]; ok {
@@ -39,11 +46,11 @@ func (t DirectionalOpenCloseCommand) Execute(ctx Context, args map[string]interf
 					openDirection = OpenCloseTraitDirection(dir)
 				}
 			}
-			return t(ctx, openPercent, openDirection)
+			res.ErrorCode = t(ctx, openPercent, openDirection)
 		}
-		return proto.ErrorCodeNotSupported
+		res.ErrorCode = proto.ErrorCodeNotSupported
 	}
-	return proto.ErrorCodeProtocolError
+	return res
 }
 
 // Name returns the intent for this Trait

@@ -91,10 +91,15 @@ func TestMultipleExecution(t *testing.T) {
 	buf := bytes.NewBufferString("")
 	json.NewEncoder(buf).Encode(res)
 
-	// due to the nature of concurrency we may get the command responses in different orders
-	if strings.TrimSpace(buf.String()) != `{"requestId":"ff36a3cc-ec34-11e6-b1a0-64510650abcf","payload":{"commands":[{"ids":["456"],"status":"ERROR","errorCode":"turnedOff"},{"ids":["123"],"status":""}]}}` &&
-		strings.TrimSpace(buf.String()) != `{"requestId":"ff36a3cc-ec34-11e6-b1a0-64510650abcf","payload":{"commands":[{"ids":["123"],"status":""},{"ids":["456"],"status":"ERROR","errorCode":"turnedOff"}]}}` {
-		t.Error("unexpected response got", strings.TrimSpace(buf.String()))
+	if res.RequestId != "ff36a3cc-ec34-11e6-b1a0-64510650abcf" {
+		t.Error("invalid requestid")
+	}
+	execResponse := res.Payload.(proto.ExecResponse)
+	if execResponse.Commands[0].ErrorCode != proto.DeviceErrorTurnedOff {
+		t.Error("invalid error code")
+	}
+	if execResponse.Commands[1].ErrorCode != nil {
+		t.Error("invalid error code")
 	}
 }
 
