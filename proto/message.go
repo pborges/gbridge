@@ -55,9 +55,31 @@ type ErrorResponse struct {
 	ErrorCode string        `json:"errorCode,omitempty"`
 }
 
+func SetIds(r *CommandResponse, ids ...string) {
+	if r != nil {
+		r.ids = ids
+	}
+}
+
 type CommandResponse struct {
-	Ids []string `json:"ids"`
-	//States    map[string]interface{} `json:"states"`
-	Status    CommandStatus `json:"status"`
-	ErrorCode string        `json:"errorCode,omitempty"`
+	ids       []string
+	Results   map[string]interface{}
+	ErrorCode ErrorCode
+}
+
+func (r CommandResponse) MarshalJSON() ([]byte, error) {
+	res := make(map[string]interface{})
+	res["status"] = CommandStatusSuccess
+	res["ids"] = r.ids
+	if r.ErrorCode != nil {
+		res["errorCode"] = r.ErrorCode.Error()
+		res["status"] = CommandStatusError
+	}
+	if r.Results != nil {
+		for k, v := range r.Results {
+			res[k] = v
+		}
+	}
+
+	return json.Marshal(res)
 }
