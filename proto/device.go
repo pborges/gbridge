@@ -1,6 +1,6 @@
 package proto
 
-// Device represets a Google Smart Home Device 
+// Device represets a Google Smart Home Device
 type Device struct {
 	Id              string                 `json:"id"`
 	Type            DeviceType             `json:"type"`
