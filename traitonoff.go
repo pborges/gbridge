@@ -8,6 +8,7 @@ import (
 // OnOffTrait provides an implementation of the Smart Home OnOff Trait Schema from Google Smart Home Actions
 type OnOffTrait struct {
 	CommandOnlyOnOff bool
+	QueryOnlyOnOff   bool
 	OnExecuteChange  OnOffCommand
 	OnStateHandler   func(Context) (bool, proto.ErrorCode)
 }
@@ -44,5 +45,8 @@ func (t OnOffTrait) TraitAttributes() []Attribute {
 			Name:  "commandOnlyOnOff",
 			Value: t.CommandOnlyOnOff,
 		},
-	}
+		{
+			Name:  "queryOnlyOnOff",
+			Value: t.QueryOnlyOnOff,
+		}}
 }
