@@ -13,6 +13,11 @@ import (
 
 //todo: naive concurrency scheme, this should be looked at and redone
 
+type agentContext struct {
+	AgentUserId string
+	Devices     map[string]Device
+}
+
 type SmartHome struct {
 	Log    *log.Logger
 	agents map[string]agentContext
@@ -62,20 +67,6 @@ func (s *SmartHome) decodeAndHandle(agentUserId string, r io.Reader) proto.Inten
 		}
 	}
 	return res
-}
-
-func (s *SmartHome) Handle() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		defer r.Body.Close()
-
-		res := s.decodeAndHandle(oauth.GetAgentUserIdFromHeader(r), r.Body)
-		if err := json.NewEncoder(w).Encode(res); err != nil {
-			if s.Log != nil {
-				s.Log.Println("error encoding response:", err)
-			}
-			http.Error(w, "error encoding response: "+err.Error(), http.StatusInternalServerError)
-		}
-	}
 }
 
 func (s *SmartHome) executeCommandForResponse(dev Device, ex proto.CommandRequest) proto.CommandResponse {
@@ -212,42 +203,6 @@ func (s *SmartHome) handleSyncIntent(agentUserId string) proto.SyncResponse {
 	return response
 }
 
-func (s *SmartHome) RegisterDevice(agentUserId string, dev Device) error {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-
-	reducedTraits := make(map[string]Trait)
-
-	// validate the device and its traits
-	for _, t := range dev.DeviceTraits() {
-		if _, ok := reducedTraits[t.TraitName()]; ok {
-			return errors.New("duplicate trait found: " + t.TraitName())
-		}
-		if err := t.ValidateTrait(); err != nil {
-			return err
-		}
-	}
-
-	if s.agents == nil {
-		s.agents = make(map[string]agentContext)
-	}
-
-	if _, ok := s.agents[agentUserId]; !ok {
-		s.agents[agentUserId] = agentContext{
-			AgentUserId: agentUserId,
-			Devices:     make(map[string]Device),
-		}
-	}
-
-	if _, ok := s.agents[agentUserId].Devices[dev.DeviceId()]; !ok {
-		s.agents[agentUserId].Devices[dev.DeviceId()] = dev
-	} else {
-		return errors.New("device by this name already exists for this agent")
-	}
-
-	return nil
-}
-
 func (s *SmartHome) handleQueryIntent(request proto.QueryRequest) proto.QueryResponse {
 	if s.Log != nil {
 		o, _ := json.Marshal(request)
@@ -287,7 +242,79 @@ func (s *SmartHome) handleQueryIntent(request proto.QueryRequest) proto.QueryRes
 	return res
 }
 
-type agentContext struct {
-	AgentUserId string
-	Devices     map[string]Device
+func (s *SmartHome) Handle() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer r.Body.Close()
+
+		res := s.decodeAndHandle(oauth.GetAgentUserIdFromHeader(r), r.Body)
+		if err := json.NewEncoder(w).Encode(res); err != nil {
+			if s.Log != nil {
+				s.Log.Println("error encoding response:", err)
+			}
+			http.Error(w, "error encoding response: "+err.Error(), http.StatusInternalServerError)
+		}
+	}
+}
+
+func (s *SmartHome) RegisterDevice(agentUserId string, dev Device) error {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	reducedTraits := make(map[string]Trait)
+
+	// validate the device and its traits
+	for _, t := range dev.DeviceTraits() {
+		if _, ok := reducedTraits[t.TraitName()]; ok {
+			return errors.New("duplicate trait found: " + t.TraitName())
+		}
+		if err := t.ValidateTrait(); err != nil {
+			return err
+		}
+	}
+
+	if s.agents == nil {
+		s.agents = make(map[string]agentContext)
+	}
+
+	if _, ok := s.agents[agentUserId]; !ok {
+		s.agents[agentUserId] = agentContext{
+			AgentUserId: agentUserId,
+			Devices:     make(map[string]Device),
+		}
+	}
+
+	if _, ok := s.agents[agentUserId].Devices[dev.DeviceId()]; !ok {
+		s.agents[agentUserId].Devices[dev.DeviceId()] = dev
+	} else {
+		return errors.New("device by this name already exists for this agent")
+	}
+
+	return nil
+}
+
+func (s *SmartHome) UnregisterDevice(agentUserId string, dev string) error {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	if _, ok := s.agents[agentUserId]; ok {
+		if _, ok := s.agents[agentUserId].Devices[dev]; ok {
+			delete(s.agents[agentUserId].Devices, dev)
+		} else {
+			return errors.New("unknown device")
+		}
+	} else {
+		return errors.New("unknown agent")
+	}
+	return nil
+}
+
+func (s *SmartHome) ListDevices(agentUserId string) []Device {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	devs := make([]Device, 0)
+	for _, dev := range s.agents[agentUserId].Devices {
+		devs = append(devs, dev)
+	}
+	return devs
 }
