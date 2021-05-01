@@ -16,14 +16,14 @@ type Device struct {
 // DeviceName contains the names and nicknames of a device.
 type DeviceName struct {
 	Name         string   `json:"name"`
-	DefaultNames []string `json:"defaultNames"`
-	Nicknames    []string `json:"nicknames"`
+	DefaultNames []string `json:"defaultNames,omitempty"`
+	Nicknames    []string `json:"nicknames,omitempty"`
 }
 
 // DeviceInfo holds the metadata (manufacturer,model,versions) of a Device
 type DeviceInfo struct {
-	Manufacturer string `json:"manufacturer"`
-	Model        string `json:"model"`
-	HwVersion    string `json:"hwVersion"`
-	SwVersion    string `json:"swVersion"`
+	Manufacturer string `json:"manufacturer,omitempty"`
+	Model        string `json:"model,omitempty"`
+	HwVersion    string `json:"hwVersion,omitempty"`
+	SwVersion    string `json:"swVersion,omitempty"`
 }
