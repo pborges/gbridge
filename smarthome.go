@@ -11,11 +11,6 @@ import (
 	"sync"
 )
 
-type IntentAspect struct {
-	Intent string
-	Func   func()
-}
-
 //todo: naive concurrency scheme, this should be looked at and redone
 
 type agentContext struct {
@@ -48,9 +43,9 @@ func (s *SmartHome) decodeAndHandle(agentUserId string, r io.Reader) proto.Inten
 
 	for _, i := range req.Inputs {
 		switch i.Intent {
-		case "action.devices.SYNC":
+		case IntentSync:
 			res.Payload = s.handleSyncIntent(agentUserId)
-		case "action.devices.EXECUTE":
+		case IntentExecute:
 			requestBody := proto.ExecRequest{}
 			if err := json.Unmarshal(i.Payload, &requestBody); err == nil {
 				res.Payload = s.handleExecuteIntent(agentUserId, requestBody)
@@ -60,7 +55,7 @@ func (s *SmartHome) decodeAndHandle(agentUserId string, r io.Reader) proto.Inten
 					ErrorCode: proto.ErrorCodeProtocolError.Error(),
 				}
 			}
-		case "action.devices.QUERY":
+		case IntentQuery:
 			requestBody := proto.QueryRequest{}
 			if err := json.Unmarshal(i.Payload, &requestBody); err == nil {
 				res.Payload = s.handleQueryIntent(requestBody)
