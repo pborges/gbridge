@@ -42,6 +42,13 @@ func (s *SmartHome) decodeAndHandle(agentUserId string, r io.Reader) proto.Inten
 	defer s.lock.RUnlock()
 
 	for _, i := range req.Inputs {
+		// fire any aspects that exist
+		for _, a := range s.Aspects {
+			if a.Intent == i.Intent {
+				a.Func()
+			}
+		}
+
 		switch i.Intent {
 		case IntentSync:
 			res.Payload = s.handleSyncIntent(agentUserId)
@@ -64,12 +71,6 @@ func (s *SmartHome) decodeAndHandle(agentUserId string, r io.Reader) proto.Inten
 					Status:    proto.CommandStatusError,
 					ErrorCode: proto.ErrorCodeProtocolError.Error(),
 				}
-			}
-		}
-
-		for _, a := range s.Aspects {
-			if a.Intent == i.Intent {
-				a.Func()
 			}
 		}
 	}
