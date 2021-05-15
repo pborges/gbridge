@@ -11,6 +11,11 @@ import (
 	"sync"
 )
 
+type IntentAspect struct {
+	Intent string
+	Func   func()
+}
+
 //todo: naive concurrency scheme, this should be looked at and redone
 
 type agentContext struct {
@@ -19,9 +24,10 @@ type agentContext struct {
 }
 
 type SmartHome struct {
-	Log    *log.Logger
-	agents map[string]agentContext
-	lock   sync.RWMutex
+	Log     *log.Logger
+	agents  map[string]agentContext
+	lock    sync.RWMutex
+	Aspects []IntentAspect // these fire when the given intent is fired these should not block
 }
 
 func (s *SmartHome) decodeAndHandle(agentUserId string, r io.Reader) proto.IntentMessageResponse {
@@ -63,6 +69,12 @@ func (s *SmartHome) decodeAndHandle(agentUserId string, r io.Reader) proto.Inten
 					Status:    proto.CommandStatusError,
 					ErrorCode: proto.ErrorCodeProtocolError.Error(),
 				}
+			}
+		}
+
+		for _, a := range s.Aspects {
+			if a.Intent == i.Intent {
+				a.Func()
 			}
 		}
 	}

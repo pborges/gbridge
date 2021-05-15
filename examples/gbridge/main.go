@@ -143,7 +143,7 @@ func main() {
 				password := r.FormValue("password")
 				//todo: validate agentUserId and password...
 				if err := authProvider.ValidateAgent(agentUserId, password); err == nil {
-					//This Handler must set up the agentUserId Header or the oauth cannot continue
+					//This IntentAspect must set up the agentUserId Header or the oauth cannot continue
 					oauth.SetAgentUserIdHeader(r, agentUserId)
 				} else {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
